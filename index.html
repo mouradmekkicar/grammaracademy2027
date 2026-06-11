@@ -2622,6 +2622,10 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     '.m-mini.fair{background:#fbf0d7;color:var(--warn)}' +
     '.m-mini.strong{background:#e8f2ec;color:var(--success)}' +
     '.m-mini.untouched{color:var(--muted)}' +
+    '.now-viewing{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 18px;margin:2px 0 20px;box-shadow:0 2px 10px rgba(10,37,64,.05)}' +
+    '.now-viewing .nv-eyebrow{font-family:var(--sans-ui);font-size:.6rem;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);font-weight:700}' +
+    '.now-viewing .nv-title{font-family:var(--serif-display);font-size:1.18rem;color:var(--navy-900);font-weight:600;margin-top:1px}' +
+    '.now-viewing .nv-sub{font-family:var(--sans-ui);font-size:.76rem;color:var(--muted);margin-top:2px}' +
     '</style>';
 
   function pathwaySubmissions(term, lessonIds) {
@@ -2762,6 +2766,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '.pw-acc-chev{font-size:.8rem;color:var(--muted,#6b7280);transition:transform .15s ease}' +
       '.pw-acc-head.open .pw-acc-chev{transform:rotate(90deg);color:var(--gold-700,#a07d22)}' +
       '.pw-acc .pw-grid{padding:14px 16px 16px}' +
+      '.pw-acc-active{display:inline-block;margin-left:8px;font-family:var(--sans-ui);font-size:.6rem;letter-spacing:.5px;background:rgba(201,169,97,.18);color:var(--gold-700,#a07d22);border:1px solid rgba(201,169,97,.5);border-radius:999px;padding:2px 9px;font-weight:700;vertical-align:middle}' +
       '</style>';
     if (GA._expandedTerm === undefined) { try { GA._expandedTerm = localStorage.getItem("mm_grammar_expanded_term") || null; } catch (_) { GA._expandedTerm = null; } }
     var pwGroups = pwStyle + Object.keys(byTerm).sort().map(function (t) {
@@ -2776,7 +2781,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       }).join("");
       return '<div class="pw-acc">' +
         '<button class="pw-acc-head' + (isOpen ? " open" : "") + '" aria-expanded="' + isOpen + '" onclick="GA._toggleTerm(\'' + t + '\')">' +
-          '<span>' + esc(grp.label) + '</span><span class="pw-acc-chev">\u25B8</span>' +
+          '<span>' + esc(grp.label) + (teacher.term === t ? ' <span class="pw-acc-active">Grade ' + esc(teacher.grade) + ' · ' + (/adv/i.test(teacher.stream) ? "Advanced" : "General") + '</span>' : '') + '</span><span class="pw-acc-chev">\u25B8</span>' +
         '</button>' +
         (isOpen ? '<div class="pw-grid">' + tiles + '</div>' : '') +
       '</div>';
@@ -2801,6 +2806,15 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     var pw = GA.registry.pathways[pkey(teacher.term, teacher.grade, teacher.stream)];
     var allLessons = pw.chapters.reduce(function (a, c) { return a.concat(c.lessons); }, []);
     var roster = rosterFor(teacher.term, teacher.grade, teacher.stream);
+
+    var nvColor = GRADE_COLOR[String(teacher.grade)] || { a: "#888", t: "#fff" };
+    var nvStream = /adv/i.test(teacher.stream) ? "Advanced" : "General";
+    var nowViewing = '<div class="now-viewing" style="border-left:5px solid ' + nvColor.a + '">' +
+      '<div><div class="nv-eyebrow">Now viewing</div>' +
+      '<div class="nv-title">Grade ' + esc(teacher.grade) + ' \u00b7 ' + nvStream + '</div>' +
+      '<div class="nv-sub">' + esc(pw.termLabel) + (pw.cefr ? ' \u00b7 ' + esc(pw.cefr) : "") + ' \u00b7 ' + roster.length + ' student' + (roster.length === 1 ? "" : "s") + '</div></div>' +
+      '<button class="btn ghost small" onclick="GA._switchClass()">Switch class</button>' +
+      '</div>';
 
     var rows = roster.length ? roster.map(function (r) {
       var m = r.model;
@@ -2830,7 +2844,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       : '<p style="color:var(--muted);font-style:italic;padding:8px 0">No intervention groups yet — they appear when 2+ students share a weak lesson or grammar family.</p>';
     var intervCard = '<h3 style="margin:28px 0 10px">Suggested intervention groups</h3><div class="card">' + interv + '</div>';
 
-    return head + PW_ANALYTICS_STYLE +
+    return head + PW_ANALYTICS_STYLE + nowViewing +
       submissionsCard(teacher.term, allLessons) +
       classProgressCard(roster, allLessons) +
       byLessonCard(roster, allLessons) +
@@ -2849,6 +2863,13 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     GA._expandedTerm = (GA._expandedTerm === t) ? null : t;   // accordion: same term closes; different term replaces
     try { localStorage.setItem("mm_grammar_expanded_term", GA._expandedTerm || ""); } catch (_) {}
     render();
+  };
+
+  GA._switchClass = function () {
+    GA._expandedTerm = teacher.term;   // open the picker on the term you're already in
+    try { localStorage.setItem("mm_grammar_expanded_term", teacher.term || ""); } catch (_) {}
+    render();
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (_) { try { window.scrollTo(0, 0); } catch (e) {} }
   };
 
   // ---- Class accounts (cloud student logins) ----
