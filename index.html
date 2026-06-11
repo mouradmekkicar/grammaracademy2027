@@ -2697,6 +2697,111 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<tr><th style="text-align:left">Lesson</th><th>Attempted</th><th>Submitted</th><th>Class avg</th><th>Weak &lt;60</th><th>Mastered \u226580</th></tr>' + rows + '</table></div>';
   }
 
+  function gradeColor(g) {
+    return ({ "9": { a: "#1f9d77", t: "#e9f8f2" }, "10": { a: "#2b73c6", t: "#e9f1fb" }, "11": { a: "#8a4fb3", t: "#f3ecfa" }, "12": { a: "#c98a1e", t: "#fbf2e0" } })[String(g)] || { a: "#888", t: "#fff" };
+  }
+  function prevLearnHtml(L) {
+    return '<div class="tb tb-rule"><div class="tb-h">Rule</div>' + (L.explanation || []).map(function (x) { return '<p>' + x + '</p>'; }).join("") + '</div>' +
+      '<div class="tb tb-example"><div class="tb-h">Examples</div>' + (L.examples || []).map(function (e) { return '<div class="ex-line ' + (e.type === "correct" ? "right" : "wrong") + '">' + e.text + '</div>'; }).join("") + '</div>' +
+      (L.mistakes && L.mistakes.length ? '<div class="tb tb-mistake"><div class="tb-h">Common mistakes</div><ul class="list-clean">' + L.mistakes.map(function (m) { return '<li>' + m + '</li>'; }).join("") + '</ul></div>' : "") +
+      (L.traps && L.traps.length ? '<div class="tb tb-trap"><div class="tb-h">Exam traps</div><ul class="list-clean">' + L.traps.map(function (m) { return '<li>' + m + '</li>'; }).join("") + '</ul></div>' : "") +
+      (L.arabicInsight ? '<div class="tb tb-arabic"><div class="tb-h">\u0634\u0631\u062d \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u00b7 Arabic insight</div><div class="arabic" dir="rtl">' + L.arabicInsight + '</div></div>' : "");
+  }
+  function prevBankHtml(L) {
+    var bank = (GA._prevBank === "official") ? (L.official || []) : (L.practice || []);
+    if (!bank.length) return '<p style="color:var(--muted);font-style:italic">No questions in this bank.</p>';
+    return bank.map(function (ex, i) {
+      return '<div class="prev-q">' + LessonPrint.renderExercise(ex, i) +
+        '<div class="prev-ans"><span class="prev-ans-tag">Answer</span> ' + LessonPrint.answerText(ex) + '</div></div>';
+    }).join("");
+  }
+
+  var PREVIEW_STYLE = '<style>' +
+    '.prev-paths{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}' +
+    '@media(max-width:900px){.prev-paths{grid-template-columns:repeat(2,1fr)}}' +
+    '@media(max-width:560px){.prev-paths{grid-template-columns:1fr}}' +
+    '.prev-tile{text-align:left;border:1px solid var(--line);border-left:5px solid var(--pa,#888);border-radius:11px;padding:12px 14px;background:var(--pt,#fff);cursor:pointer;font-family:var(--sans-ui);transition:transform .12s ease,box-shadow .12s ease}' +
+    '.prev-tile:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(10,37,64,.13)}' +
+    '.prev-tile .g{display:block;font-weight:700;color:var(--navy-800);font-size:.96rem}' +
+    '.prev-tile .s{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--pa,#888);margin-top:4px;font-weight:600}' +
+    '.prev-tile .n{display:block;font-size:.72rem;color:var(--muted);margin-top:6px}' +
+    '.prev-lesson-list{display:grid;gap:8px}' +
+    '.prev-lesson-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:1px solid var(--line);border-radius:10px;padding:11px 14px;background:#fff;cursor:pointer;font-family:var(--sans-ui);transition:background .12s ease}' +
+    '.prev-lesson-item:hover{background:var(--navy-50)}' +
+    '.prev-lesson-item .pli-code{font-size:.66rem;font-weight:700;letter-spacing:.5px;color:var(--gold-700);background:rgba(201,169,97,.14);border:1px solid rgba(201,169,97,.4);border-radius:6px;padding:3px 7px;white-space:nowrap}' +
+    '.prev-lesson-item .pli-title{flex:1;color:var(--navy-900);font-size:.92rem}' +
+    '.prev-lesson-item .pli-go{font-size:.74rem;color:var(--muted)}' +
+    '.prev-q{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff}' +
+    '.prev-ans{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);font-family:var(--sans-ui);font-size:.86rem;color:var(--navy-800)}' +
+    '.prev-ans-tag{font-size:.6rem;letter-spacing:1px;text-transform:uppercase;font-weight:700;color:var(--success);margin-right:6px}' +
+    '.prev-bank-toggle{display:inline-flex;gap:6px;margin:4px 0 16px;flex-wrap:wrap}' +
+    '.now-viewing{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 18px;margin:2px 0 20px;box-shadow:0 2px 10px rgba(10,37,64,.05)}' +
+    '.now-viewing .nv-eyebrow{font-family:var(--sans-ui);font-size:.6rem;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);font-weight:700}' +
+    '.now-viewing .nv-title{font-family:var(--serif-display);font-size:1.18rem;color:var(--navy-900);font-weight:600;margin-top:1px}' +
+    '.now-viewing .nv-sub{font-family:var(--sans-ui);font-size:.76rem;color:var(--muted);margin-top:2px}' +
+    '</style>';
+
+  Views.preview = function () {
+    if (!teacher.authed) return Views.teacher();
+    var head = '<div class="page"><div class="eyebrow">Teacher area</div><h1>Lesson preview</h1>' +
+      '<p class="section-sub">Browse and read every lesson in every academy &mdash; the rule, examples, and the full question bank with answers. Read-only: nothing here touches student progress.</p>';
+
+    // Level 1 — choose an academy
+    if (!GA._prevPw || !GA.registry.pathways[GA._prevPw]) {
+      var byTerm = {};
+      Object.keys(GA.registry.pathways).forEach(function (k) {
+        var p = GA.registry.pathways[k];
+        (byTerm[p.term] = byTerm[p.term] || { label: p.termLabel, items: [] }).items.push({ key: k, p: p });
+      });
+      var groups = Object.keys(byTerm).sort().map(function (t) {
+        var g = byTerm[t];
+        var tiles = g.items.sort(function (a, b) {
+          var ra = (parseInt(a.p.grade, 10) || 0) * 10 + (a.p.stream === "advanced" ? 1 : 0);
+          var rb = (parseInt(b.p.grade, 10) || 0) * 10 + (b.p.stream === "advanced" ? 1 : 0);
+          return ra - rb;
+        }).map(function (it) {
+          var p = it.p, c = gradeColor(p.grade), stream = /adv/i.test(p.stream) ? "Advanced" : "General";
+          var n = p.chapters.reduce(function (a, c2) { return a + c2.lessons.length; }, 0);
+          return '<button class="prev-tile" style="--pa:' + c.a + ';--pt:' + c.t + '" onclick="GA._prevPickPathway(\'' + it.key + '\')">' +
+            '<span class="g">Grade ' + esc(p.grade) + '</span><span class="s">' + stream + '</span><span class="n">' + n + ' lessons</span></button>';
+        }).join("");
+        return '<div style="margin-bottom:16px"><div class="pw-term">' + esc(g.label) + '</div><div class="prev-paths">' + tiles + '</div></div>';
+      }).join("");
+      return PREVIEW_STYLE + head + groups + '<div style="margin-top:18px"><button class="btn ghost small" onclick="GA.go(\'#teacher\')">\u2190 Dashboard</button></div></div>';
+    }
+
+    var pw = GA.registry.pathways[GA._prevPw];
+    var stream = /adv/i.test(pw.stream) ? "Advanced" : "General";
+
+    // Level 3 — read a lesson
+    if (GA._prevLid && GA.registry.lessons[GA._prevLid]) {
+      var L = GA.registry.lessons[GA._prevLid];
+      var nP = (L.practice || []).length, nO = (L.official || []).length;
+      var toggle = '<div class="prev-bank-toggle">' +
+        '<button class="btn ' + (GA._prevBank !== "official" ? "gold" : "ghost") + ' small" onclick="GA._prevSetBank(\'practice\')">Practice (' + nP + ')</button>' +
+        '<button class="btn ' + (GA._prevBank === "official" ? "gold" : "ghost") + ' small" onclick="GA._prevSetBank(\'official\')">Official test (' + nO + ')</button></div>';
+      return PREVIEW_STYLE + head +
+        '<div style="margin-bottom:12px"><button class="btn ghost small" onclick="GA._prevBackToList()">\u2190 ' + esc(pw.streamLabel) + ' lessons</button></div>' +
+        '<div class="lesson-head"><div class="lh-body"><div class="meta-row"><span class="tag code">' + esc(L.code) + '</span><span class="tag">' + esc(L.cefr) + '</span>' + (L.moeSlo ? '<span class="tag">' + esc(L.moeSlo) + '</span>' : "") + '</div>' +
+        '<h1 style="margin-top:10px">' + esc(L.title) + '</h1><p class="section-sub" style="margin-bottom:0">' + esc(L.chapter) + ' \u00b7 ' + esc(L.week) + '</p></div></div>' +
+        '<h3 style="margin:18px 0 8px">Learn the rule</h3>' + prevLearnHtml(L) +
+        '<h3 style="margin:26px 0 4px">Question bank \u00b7 answer key</h3>' + toggle + prevBankHtml(L) +
+        '<div style="margin-top:18px"><button class="btn ghost small" onclick="GA._prevBackToList()">\u2190 Lesson list</button> <button class="btn ghost small" onclick="GA._printThisLesson(\'' + GA._prevLid + '\')">Print worksheet</button></div></div>';
+    }
+
+    // Level 2 — lessons in the chosen academy
+    var list = pw.chapters.map(function (ch) {
+      var items = ch.lessons.map(function (lid) {
+        var L2 = GA.registry.lessons[lid]; if (!L2) return "";
+        return '<button class="prev-lesson-item" onclick="GA._prevPickLesson(\'' + lid + '\')"><span class="pli-code">' + esc(L2.code) + '</span><span class="pli-title">' + esc(L2.title) + '</span><span class="pli-go">Preview \u2192</span></button>';
+      }).join("");
+      return '<div style="margin-bottom:18px"><div class="pw-term">' + esc(ch.title) + '</div><div class="prev-lesson-list">' + items + '</div></div>';
+    }).join("");
+    return PREVIEW_STYLE + head +
+      '<div class="now-viewing" style="border-left:5px solid ' + gradeColor(pw.grade).a + '"><div><div class="nv-eyebrow">Previewing academy</div><div class="nv-title">Grade ' + esc(pw.grade) + ' \u00b7 ' + stream + '</div><div class="nv-sub">' + esc(pw.termLabel) + (pw.cefr ? ' \u00b7 ' + esc(pw.cefr) : "") + '</div></div><button class="btn ghost small" onclick="GA._prevBackToPaths()">Change academy</button></div>' +
+      list + '<div style="margin-top:8px"><button class="btn ghost small" onclick="GA.go(\'#teacher\')">\u2190 Dashboard</button></div></div>';
+  };
+
   function cloudAccountsCard() {
     var tag = teacherTag();
     var userField = tag
@@ -2794,6 +2899,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<h3 style="margin:0 0 12px">Classes &amp; pathways <span style="color:var(--muted);font-weight:normal;font-size:.82rem">— pick one to open its roster</span></h3>' +
       pwGroups +
       '<div style="margin:8px 0 24px"><button class="btn ghost small sentence" onclick="GA.go(\'#teacher-peek\')">Registry &amp; submissions</button> ' +
+      '<button class="btn ghost small sentence" onclick="GA._openPreview()">Preview lessons</button> ' +
       (GA.cloud.enabled() ? '<button class="btn ghost small sentence" onclick="GA._syncClassProgress()">Refresh from cloud</button> ' : '') +
       '<button class="btn ghost small sentence" onclick="GA._teacherLogout()">Sign out</button></div>' +
       '<div style="margin:-14px 0 24px;font-family:var(--sans-ui);font-size:.78rem;color:var(--muted)">Reports &amp; certificates are signed by <strong style="color:var(--navy-800)">' + esc(signatureFor().name) + '</strong> \u00b7 ' + esc(signatureFor().title) + ' <button class="btn ghost small sentence" style="margin-left:8px" onclick="GA._editSignature()">Edit signature</button></div>';
@@ -2871,6 +2977,13 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     render();
     try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (_) { try { window.scrollTo(0, 0); } catch (e) {} }
   };
+
+  GA._openPreview = function () { GA._prevLid = null; if (!GA.registry.pathways[GA._prevPw]) GA._prevPw = null; GA.go("#preview"); };
+  GA._prevPickPathway = function (k) { GA._prevPw = k; GA._prevLid = null; GA._prevBank = "practice"; render(); };
+  GA._prevPickLesson = function (lid) { GA._prevLid = lid; GA._prevBank = "practice"; render(); try { window.scrollTo(0, 0); } catch (_) {} };
+  GA._prevSetBank = function (b) { GA._prevBank = (b === "official") ? "official" : "practice"; render(); };
+  GA._prevBackToList = function () { GA._prevLid = null; render(); try { window.scrollTo(0, 0); } catch (_) {} };
+  GA._prevBackToPaths = function () { GA._prevPw = null; GA._prevLid = null; render(); };
 
   // ---- Class accounts (cloud student logins) ----
   // Easy-to-read code: 6 chars, no ambiguous glyphs (no I/L/O/0/1).
@@ -4024,6 +4137,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     if (h === "reports-batch") { el("view").innerHTML = Views.reportsBatch(); paintNav(); return; }
     if (h === "certificate") { el("view").innerHTML = Views.certificate(); paintNav(); return; }
     if (h === "print-picker") { el("view").innerHTML = Views.printPicker(); paintNav(); return; }
+    if (h === "preview") { el("view").innerHTML = Views.preview(); paintNav(); return; }
     if (!session.num) { setEntryMode(true); el("view").innerHTML = Views.entrance(); paintNav(); return; }
 
     var html;
