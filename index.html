@@ -31,6 +31,42 @@
   };
 </script>
 
+<!-- ====================================================================
+     STEP 1c · RUNTIME FLAGS + MODULE MANIFEST  (edit-me block)
+     -----------------------------------------------------------------
+     GA_DEMO_MODE  — when FALSE (production): unknown students are NOT
+       silently accepted; if the cloud is configured but unreachable the
+       login shows a clear message instead of inventing a local account.
+       Set to TRUE only for an offline classroom demo on a single device.
+     GA.manifest   — the EXPECTED coverage grid. It drives the "Coming
+       soon" cards and the teacher Module Library. You do NOT need to edit
+       it when you drop in a new ga_data_*.js file: any pathway a data file
+       registers becomes "available" automatically, and any registered term
+       not listed here is auto-added. Edit term ids/labels here only if a
+       future data file registers a term id that differs from the guesses
+       below (T2-2627 / T3-2627), so the "coming soon" labels stay tidy.
+     ==================================================================== -->
+<script>
+  window.GA = window.GA || {};
+  window.GA_DEMO_MODE = false;          // production-safe default (see note above)
+
+  GA.manifest = {
+    grades: ["9", "10", "11", "12"],
+    streams: [
+      { id: "general",  label: "General"  },
+      { id: "advanced", label: "Advanced" }
+    ],
+    // Expected terms for the current academy. Term 1 AY26-27 ships now;
+    // Terms 2 & 3 are placeholders that flip to "available" the instant a
+    // data file registers a pathway under the matching term id.
+    terms: [
+      { id: "T1-2627", num: 1, label: "Term 1 · AY 2026\u201327" },
+      { id: "T2-2627", num: 2, label: "Term 2 · AY 2026\u201327" },
+      { id: "T3-2627", num: 3, label: "Term 3 · AY 2026\u201327" }
+    ]
+  };
+</script></script>
+
 <style>
 :root{
   --navy-900:#0e1b3a; --navy-800:#152447; --navy-700:#1e3260; --navy-600:#2a4478;
@@ -1433,6 +1469,85 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
   .re-sweep{display:none}
 }
 
+/* ====================================================================
+   UPGRADE STYLES (additive · v3.1) — coming-soon, readiness checklist,
+   roster import, retake, cloud status, why-this-matters
+   ==================================================================== */
+/* ---- Coming-soon module cards ---- */
+.soon-card{position:relative;overflow:hidden;background:
+  repeating-linear-gradient(135deg,rgba(30,50,96,.018) 0 12px,transparent 12px 24px),var(--paper);
+  border:1px dashed var(--line-dark);box-shadow:var(--shadow-1);opacity:.92}
+.soon-card h3{font-size:1.2rem}
+.soon-ribbon{position:absolute;top:12px;right:-34px;transform:rotate(45deg);background:var(--accent-violet);
+  color:#fff;font-family:var(--sans-ui);font-size:.6rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  padding:4px 40px;box-shadow:var(--shadow-1)}
+.soon-note{margin:8px 0 0;font-size:.88rem;color:var(--muted);font-family:var(--sans-ui)}
+.soon-card button[disabled]{opacity:.55;cursor:not-allowed}
+
+/* ---- Why-this-matters box (lesson learn step) ---- */
+.tb-why{background:linear-gradient(180deg,var(--accent-sky-soft),var(--white));border:1px solid #cfe0f4;
+  border-left:4px solid var(--accent-sky);border-radius:var(--r-md);padding:12px 16px;margin-bottom:14px}
+.tb-why .tb-h{color:#2f6aa8}
+.tb-why p{margin:.2em 0 0}
+
+/* ---- Readiness checklist (before mastery test) ---- */
+.readygate{background:linear-gradient(180deg,var(--accent-amber-soft),var(--white));
+  border:1px solid var(--gold-300);border-radius:var(--r-lg);padding:20px 22px;box-shadow:var(--shadow-1)}
+.readygate h3{display:flex;align-items:center;gap:10px}
+.readygate .rg-list{list-style:none;margin:14px 0 6px;padding:0;display:grid;gap:10px}
+.readygate .rg-item{display:flex;align-items:flex-start;gap:12px;background:var(--white);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:12px 14px;font-family:var(--sans-ui);font-size:.95rem;cursor:pointer;transition:border-color var(--t-fast),background var(--t-fast)}
+.readygate .rg-item:hover{border-color:var(--gold-400)}
+.readygate .rg-item input{width:20px;height:20px;margin-top:1px;accent-color:var(--accent-amber);flex:0 0 auto;cursor:pointer}
+.readygate .rg-item.checked{background:var(--accent-emerald-soft);border-color:var(--accent-emerald)}
+.readygate .rg-cta{margin-top:16px}
+.readygate .rg-cta button[disabled]{opacity:.5;cursor:not-allowed;filter:grayscale(40%)}
+.readygate .rg-hint{font-family:var(--sans-ui);font-size:.82rem;color:var(--muted);margin-top:8px}
+
+/* ---- Retake banner (student) ---- */
+.banner.retake{background:linear-gradient(180deg,var(--accent-violet-soft),var(--white));border-color:#cfc6ec}
+.banner.retake .big{color:var(--accent-violet)}
+
+/* ---- Roster import + preview ---- */
+.import-box{display:grid;gap:12px}
+.import-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:680px){.import-grid{grid-template-columns:1fr}}
+.import-ta{width:100%;min-height:120px;font-family:var(--sans-ui);font-size:.9rem;border:1px solid var(--line);
+  border-radius:var(--r-md);padding:10px 12px;resize:vertical;background:var(--white)}
+.preview-table{width:100%;border-collapse:collapse;font-family:var(--sans-ui);font-size:.86rem}
+.preview-table th,.preview-table td{border:1px solid var(--line);padding:6px 9px;text-align:left}
+.preview-table tr.bad td{background:var(--accent-coral-soft);color:#9a3b35}
+.preview-table tr.dup td{background:var(--accent-amber-soft)}
+.import-summary{display:flex;gap:8px;flex-wrap:wrap;font-family:var(--sans-ui);font-size:.82rem}
+.import-summary .pill{border-radius:999px;padding:3px 12px;border:1px solid var(--line)}
+.import-summary .ok{background:var(--accent-emerald-soft);border-color:#bfe3cd;color:#256b44}
+.import-summary .warnp{background:var(--accent-amber-soft);border-color:var(--gold-300);color:#8a5a14}
+.import-summary .errp{background:var(--accent-coral-soft);border-color:#e8b7b3;color:#9a3b35}
+
+/* ---- Cloud status pill ---- */
+.cloud-pill{display:inline-flex;align-items:center;gap:7px;font-family:var(--sans-ui);font-size:.76rem;font-weight:600;
+  letter-spacing:.3px;border-radius:999px;padding:5px 13px;border:1px solid var(--line);background:var(--white);color:var(--ink-soft)}
+.cloud-pill .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.cloud-pill.is-online{background:var(--accent-emerald-soft);border-color:#bfe3cd;color:#256b44}
+.cloud-pill.is-online .dot{background:var(--accent-emerald)}
+.cloud-pill.is-demo{background:var(--accent-amber-soft);border-color:var(--gold-300);color:#8a5a14}
+.cloud-pill.is-demo .dot{background:var(--accent-amber)}
+.cloud-pill.is-offline{background:var(--navy-50);border-color:var(--line);color:var(--muted)}
+.cloud-pill.is-offline .dot{background:var(--muted)}
+
+/* ---- Module library table ---- */
+.modlib{width:100%;border-collapse:collapse;font-family:var(--sans-ui);font-size:.84rem}
+.modlib th,.modlib td{border:1px solid var(--line);padding:8px 10px;text-align:left}
+.modlib tr.soon td{color:var(--muted);background:repeating-linear-gradient(135deg,rgba(30,50,96,.02) 0 8px,transparent 8px 16px)}
+.modlib .st-ok{color:#256b44;font-weight:600}
+.modlib .st-soon{color:var(--accent-violet);font-weight:600}
+
+/* ---- Dashboard sub-nav (additive grouping aid) ---- */
+.dash-jump{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 18px}
+.dash-jump a{font-family:var(--sans-ui);font-size:.8rem;text-decoration:none;color:var(--navy-700);
+  border:1px solid var(--line);border-radius:999px;padding:5px 13px;background:var(--white);cursor:pointer;transition:all var(--t-fast)}
+.dash-jump a:hover{border-color:var(--gold-400);background:var(--gold-100)}
+
 /* ---------- Print safety: entry/auth UI never prints ---------- */
 @media print{
   .entry-stage,.entry-roles-wrap,.role-grid,.role-entrance,.re-veil,.re-sweep,.re-ph,
@@ -1555,6 +1670,56 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     GA._validate(key);
   };
 
+  /* ---------- module coverage (manifest x registry) -------------------
+     Single source of truth for "what is available vs coming soon". Reads
+     the editable GA.manifest and the live registry; never throws if a
+     module is missing. Future data files appear automatically: a pathway
+     becomes available the moment its file registers, and a registered term
+     that the manifest didn't list is folded in so it still shows.
+     ------------------------------------------------------------------ */
+  GA.coverage = function () {
+    var man = GA.manifest || { grades: [], streams: [], terms: [] };
+    // Start from manifest terms, then fold in any registered-but-unlisted term.
+    var terms = (man.terms || []).map(function (t) { return { id: t.id, num: t.num, label: t.label }; });
+    var seen = {}; terms.forEach(function (t) { seen[t.id] = true; });
+    Object.keys(GA.registry.terms).forEach(function (tid) {
+      if (!seen[tid]) {
+        var lab = GA.registry.terms[tid].label || tid;
+        var mn = (/Term\s*(\d+)/i.exec(lab) || [])[1];
+        terms.push({ id: tid, num: mn ? parseInt(mn, 10) : 99, label: lab });
+      }
+    });
+    terms.sort(function (a, b) { return (a.num || 99) - (b.num || 99) || String(a.id).localeCompare(String(b.id)); });
+
+    var grades = (man.grades && man.grades.length) ? man.grades.slice() : [];
+    var streams = (man.streams && man.streams.length) ? man.streams.slice()
+                 : [{ id: "general", label: "General" }, { id: "advanced", label: "Advanced" }];
+
+    function cell(termId, grade, streamId) {
+      var pw = GA.registry.pathways[pkey(termId, grade, streamId)];
+      if (!pw) return { available: false };
+      var lessons = pw.chapters.reduce(function (a, c) { return a + c.lessons.length; }, 0);
+      var practiceQ = 0, officialQ = 0;
+      pw.chapters.forEach(function (c) {
+        c.lessons.forEach(function (lid) {
+          var L = GA.registry.lessons[lid]; if (!L) return;
+          practiceQ += (L.practice || []).length;
+          officialQ += (L.official || []).length;
+        });
+      });
+      return { available: true, pathway: pw, lessons: lessons, practiceQ: practiceQ, officialQ: officialQ };
+    }
+    return { terms: terms, grades: grades, streams: streams, cell: cell,
+      termHasAny: function (termId) {
+        for (var gi = 0; gi < grades.length; gi++)
+          for (var si = 0; si < streams.length; si++)
+            if (cell(termId, grades[gi], streams[si].id).available) return true;
+        // also true if a registered pathway exists for a grade/stream outside the manifest grid
+        return Object.keys(GA.registry.pathways).some(function (k) { return GA.registry.pathways[k].term === termId; });
+      }
+    };
+  };
+
   /* ---------- validator (locked decision #4) --------------------------
      practice and official must share NO question. Console-warns on any
      normalized prompt/stem overlap >= 0.85; result surfaces in #teacher.
@@ -1637,6 +1802,36 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
      REDESIGN HELPERS (additive — no existing function renamed)
      Planned future extraction: js/utilities.js, js/student-dashboard.js
      ==================================================================== */
+
+  /* ---- whyMatters: a friendly "Why this matters" line for a lesson ----
+     Uses the data module's own text if present (L.whyItMatters / L.whyMatters);
+     otherwise generates a sensible line from the lesson title keywords so the
+     box is never empty. Purely presentational — no data is mutated. */
+  function whyMatters(L) {
+    if (!L) return "";
+    if (L.whyItMatters) return L.whyItMatters;
+    if (L.whyMatters) return L.whyMatters;
+    var t = (L.title || "").toLowerCase();
+    var map = [
+      [/question tag/,        "Question tags help you check information, invite agreement, and sound natural in conversation."],
+      [/word order|sentence structure/, "Word order keeps your sentences clear, natural, and accurate in English."],
+      [/comparative|superlative/, "Comparatives and superlatives let you describe differences precisely when you compare people, places, and things."],
+      [/contraction/,         "Contractions make your speaking and informal writing sound fluent and natural."],
+      [/preposition/,         "The right preposition makes your meaning exact \u2014 small words that change everything."],
+      [/reference|pronoun/,   "Reference words stop you repeating yourself and make longer texts flow smoothly."],
+      [/can|ability|modal/,   "Modal verbs let you express ability, possibility, and certainty with confidence."],
+      [/certain|probabil|deduc/, "Expressing certainty helps you say how sure you are \u2014 essential for clear opinions and arguments."],
+      [/transition|linker|connect|cohesion/, "Linking words guide your reader and make your writing read as one connected piece."],
+      [/tense|past|present|future|perfect/, "Using the right tense makes the timing of your ideas clear and correct."],
+      [/passive/,             "The passive voice lets you focus on the action when the doer is unknown or unimportant."],
+      [/condition|if /,       "Conditionals let you talk about possibilities, consequences, and hypothetical situations."],
+      [/relative clause/,     "Relative clauses add detail efficiently and make your sentences more sophisticated."],
+      [/article/,             "Articles signal whether you mean something general or specific \u2014 a small choice with big effect."],
+      [/punctuation/,         "Correct punctuation keeps your meaning clear and your writing easy to read."]
+    ];
+    for (var i = 0; i < map.length; i++) if (map[i][0].test(t)) return map[i][1];
+    return "Mastering \u201C" + (L.title || "this point") + "\u201D makes your English clearer, more accurate, and more confident \u2014 in speaking, writing, and exams.";
+  }
 
   /* ---- GAMeta: single metadata utility (dynamic term / AY — no hardcoding) ---- */
   var GAMeta = {
@@ -2013,13 +2208,29 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
         '</div>';
     }
 
-    // ---- term / pathway cards ----
-    var cards = terms.map(function (t) {
-      var pw = Object.keys(GA.registry.pathways).filter(function (k) { return GA.registry.pathways[k].term === t; });
-      return '<div class="card lift" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();GA._setTerm(\'' + t + '\')}" onclick="GA._setTerm(\'' + t + '\')"><div class="eyebrow">Term</div>' +
-        '<h3>' + esc(GA.registry.terms[t].label) + '</h3>' +
-        '<div class="score-line">' + pw.length + ' grade \u00b7 stream pathway' + (pw.length === 1 ? "" : "s") + ' available</div>' +
-        '<div style="margin-top:14px"><button class="btn ghost small sentence" onclick="event.stopPropagation();GA._setTerm(\'' + t + '\')">Open term</button></div></div>';
+    // ---- term / pathway cards (manifest-driven: available + coming soon) ----
+    var cov = GA.coverage();
+    var totalStreamsPerTerm = cov.grades.length * cov.streams.length;
+    var cards = cov.terms.map(function (tm) {
+      var t = tm.id;
+      var has = cov.termHasAny(t);
+      if (has) {
+        var pwKeys = Object.keys(GA.registry.pathways).filter(function (k) { return GA.registry.pathways[k].term === t; });
+        var avail = pwKeys.length;
+        var coverNote = totalStreamsPerTerm
+          ? avail + ' of ' + totalStreamsPerTerm + ' grade \u00b7 stream pathway' + (totalStreamsPerTerm === 1 ? '' : 's') + ' available'
+          : avail + ' pathway' + (avail === 1 ? '' : 's') + ' available';
+        return '<div class="card lift" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();GA._setTerm(\'' + t + '\')}" onclick="GA._setTerm(\'' + t + '\')"><div class="eyebrow">Term</div>' +
+          '<h3>' + esc(tm.label) + '</h3>' +
+          '<div class="score-line">' + coverNote + '</div>' +
+          '<div style="margin-top:14px"><button class="btn ghost small sentence" onclick="event.stopPropagation();GA._setTerm(\'' + t + '\')">Open term</button></div></div>';
+      }
+      // coming-soon term card (no registered pathways yet)
+      return '<div class="card soon-card" aria-disabled="true"><span class="soon-ribbon">Coming soon</span><div class="eyebrow" style="color:var(--muted)">Term</div>' +
+        '<h3 style="color:var(--navy-700)">' + esc(tm.label) + '</h3>' +
+        '<div class="score-line">Not uploaded yet</div>' +
+        '<p class="soon-note">These pathways will unlock automatically when their data files are added.</p>' +
+        '<div style="margin-top:10px"><button class="btn ghost small sentence" disabled aria-disabled="true">Not available yet</button></div></div>';
     }).join("");
 
     return '<div class="page">' + hero + cont + summary +
@@ -2046,40 +2257,58 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
 
   Views.streams = function () {
     var t = pick.term;
-    var paths = Object.keys(GA.registry.pathways).map(function (k) { return GA.registry.pathways[k]; })
-      .filter(function (p) { return p.term === t; });
-    // group by grade
-    var byGrade = {};
-    paths.forEach(function (p) { (byGrade[p.grade] = byGrade[p.grade] || []).push(p); });
-    // accent palette (theme-matching) cycled per card; stream order: advanced (left) -> general (right)
+    var cov = GA.coverage();
+    var termMeta = cov.terms.filter(function (x) { return x.id === t; })[0] ||
+      { id: t, label: (GA.registry.terms[t] && GA.registry.terms[t].label) || t };
+    // grade list = manifest grades unioned with any registered grades for this term (future-proof)
+    var grades = cov.grades.slice();
+    Object.keys(GA.registry.pathways).forEach(function (k) {
+      var p = GA.registry.pathways[k];
+      if (p.term === t && grades.indexOf(p.grade) < 0) grades.push(p.grade);
+    });
+    grades.sort(function (a, b) { return String(a).localeCompare(String(b), undefined, { numeric: true }); });
+
+    // accent palette (theme-matching) cycled per available card
     var ACC = ["sky", "teal", "emerald", "amber", "violet", "coral"], _ai = 0;
-    function _srank(p) { var s = (p.stream || "").toLowerCase(); return s.indexOf("advanced") > -1 ? 0 : (s.indexOf("general") > -1 ? 2 : 1); }
-    var blocks = Object.keys(byGrade).sort(function (a, b) {
-      return String(a).localeCompare(String(b), undefined, { numeric: true });
-    }).map(function (g) {
-      var row = byGrade[g].slice().sort(function (a, b) {
-        return (_srank(a) - _srank(b)) || String(a.streamLabel).localeCompare(String(b.streamLabel));
-      });
-      var cards = row.map(function (p) {
-        var n = p.chapters.reduce(function (a, c) { return a + c.lessons.length; }, 0);
-        var comp = pathwayCompletion(session.num, p);
-        var ac = ACC[_ai++ % ACC.length];
-        var src = (p.source || "").split(/\.\s/)[0].trim();   // first sentence only — keep cards simple
-        return '<div class="card lift pathway-card" style="border-top:3px solid var(--accent-' + ac + ')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();GA._setStream(\'' + p.grade + '\',\'' + p.stream + '\')}" onclick="GA._setStream(\'' + p.grade + '\',\'' + p.stream + '\')">' +
-          '<div class="eyebrow" style="color:var(--accent-' + ac + ')">' + esc(p.cefr) + '</div><h3>' + esc(p.streamLabel) + '</h3>' +
-          '<div class="pc-row"><span class="tag">Grade ' + esc(p.grade) + '</span><span class="tag">' + esc(GAMeta.termShort(p)) + '</span><span class="tag">' + p.chapters.length + ' chapter' + (p.chapters.length === 1 ? "" : "s") + '</span><span class="tag">' + n + ' lesson' + (n === 1 ? "" : "s") + '</span></div>' +
-          (src ? '<p style="margin:8px 0 0;font-size:.92rem">' + esc(src) + '</p>' : '') +
-          '<div class="pc-bar" role="progressbar" aria-valuenow="' + comp.pct + '" aria-valuemin="0" aria-valuemax="100" aria-label="Pathway completion"><i style="width:' + comp.pct + '%;background:var(--accent-' + ac + ')"></i></div>' +
-          '<div class="pc-row"><span>' + comp.done + ' of ' + comp.total + ' lessons completed \u00b7 ' + comp.pct + '%</span></div>' +
-          '<div class="pc-actions"><button class="btn sentence small" onclick="event.stopPropagation();GA._setStream(\'' + p.grade + '\',\'' + p.stream + '\')">Open pathway</button></div></div>';
+    function _srank(s) { s = (s || "").toLowerCase(); return s.indexOf("advanced") > -1 ? 0 : (s.indexOf("general") > -1 ? 2 : 1); }
+
+    var blocks = grades.map(function (g) {
+      // order streams: advanced first, then general, then anything else
+      var streams = cov.streams.slice().sort(function (a, b) { return (_srank(a.id) - _srank(b.id)) || String(a.label).localeCompare(String(b.label)); });
+      var cards = streams.map(function (sm) {
+        var c = cov.cell(t, g, sm.id);
+        if (c.available) {
+          var p = c.pathway;
+          var comp = pathwayCompletion(session.num, p);
+          var ac = ACC[_ai++ % ACC.length];
+          var src = (p.source || "").split(/\.\s/)[0].trim();   // first sentence only — keep cards simple
+          return '<div class="card lift pathway-card" style="border-top:3px solid var(--accent-' + ac + ')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();GA._setStream(\'' + p.grade + '\',\'' + p.stream + '\')}" onclick="GA._setStream(\'' + p.grade + '\',\'' + p.stream + '\')">' +
+            '<div class="eyebrow" style="color:var(--accent-' + ac + ')">' + esc(p.cefr) + '</div><h3>' + esc(p.streamLabel) + '</h3>' +
+            '<div class="pc-row"><span class="tag">Grade ' + esc(p.grade) + '</span><span class="tag">' + esc(GAMeta.termShort(p)) + '</span><span class="tag">' + p.chapters.length + ' chapter' + (p.chapters.length === 1 ? "" : "s") + '</span><span class="tag">' + c.lessons + ' lesson' + (c.lessons === 1 ? "" : "s") + '</span></div>' +
+            (src ? '<p style="margin:8px 0 0;font-size:.92rem">' + esc(src) + '</p>' : '') +
+            '<div class="pc-bar" role="progressbar" aria-valuenow="' + comp.pct + '" aria-valuemin="0" aria-valuemax="100" aria-label="Pathway completion"><i style="width:' + comp.pct + '%;background:var(--accent-' + ac + ')"></i></div>' +
+            '<div class="pc-row"><span>' + comp.done + ' of ' + comp.total + ' lessons completed \u00b7 ' + comp.pct + '%</span></div>' +
+            '<div class="pc-actions"><button class="btn sentence small" onclick="event.stopPropagation();GA._setStream(\'' + p.grade + '\',\'' + p.stream + '\')">Open pathway</button></div></div>';
+        }
+        // ---- coming-soon card (no progress, not clickable) ----
+        return '<div class="card soon-card" aria-disabled="true">' +
+          '<span class="soon-ribbon">Coming soon</span>' +
+          '<div class="eyebrow" style="color:var(--muted)">Grade ' + esc(g) + ' \u00b7 ' + esc(sm.label) + '</div>' +
+          '<h3 style="color:var(--navy-700)">Grade ' + esc(g) + ' ' + esc(sm.label) + ' Pathway</h3>' +
+          '<div class="pc-row"><span class="tag">' + esc(termMeta.label) + '</span></div>' +
+          '<p class="soon-note">This module has not been uploaded yet. It will appear here automatically once its data file is added.</p>' +
+          '<div class="pc-actions"><button class="btn ghost small sentence" disabled aria-disabled="true">Not available yet</button></div></div>';
       }).join("");
       return '<h2 style="margin:26px 0 14px">Grade ' + esc(g) + '</h2><div class="grid cols-2">' + cards + '</div>';
     }).join("");
+
     return '<div class="page"><div class="crumb"><a onclick="GA.go(\'#home\')">Terms</a><span class="sep">›</span>' +
-      esc(GA.registry.terms[t].label) + '</div>' +
+      esc(termMeta.label) + '</div>' +
       imgSlot("academy-library-background.webp", "Academy library artwork", "", "Library artwork") +
       '<div class="eyebrow" style="margin-top:20px">Choose grade &amp; stream</div>' +
-      '<h1>' + esc(GA.registry.terms[t].label) + '</h1>' + blocks + '</div>';
+      '<h1>' + esc(termMeta.label) + '</h1>' +
+      '<p class="section-sub">Available pathways open immediately. Modules marked <em>Coming soon</em> are part of the academy plan and will switch on as soon as their data file is uploaded.</p>' +
+      blocks + '</div>';
   };
 
   Views.lessons = function () {
@@ -2133,6 +2362,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     var p = GA.registry.pathways[pkey(pick.term, pick.grade, pick.stream)];
     // Teaching blocks: original content preserved verbatim, reformatted visually.
     var learn =
+      '<div class="tb tb-why"><div class="tb-h">Why this matters</div><p>' + esc(whyMatters(L)) + '</p></div>' +
       '<div class="tb tb-rule"><div class="tb-h">Rule</div>' + L.explanation.map(function (x) { return '<p>' + x + '</p>'; }).join("") + '</div>' +
       '<div class="tb tb-example"><div class="tb-h">Examples</div>' + L.examples.map(function (e) { return '<div class="ex-line ' + (e.type === "correct" ? "right" : "wrong") + '">' + e.text + '</div>'; }).join("") + '</div>' +
       (L.mistakes && L.mistakes.length ? '<div class="tb tb-mistake"><div class="tb-h">Common mistakes</div><ul class="list-clean">' + L.mistakes.map(function (m) { return '<li>' + m + '</li>'; }).join("") + '</ul></div>' : "") +
@@ -2209,39 +2439,96 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     attachMeter(host, L.practice, live.st);
   }
 
+  /* ---- readiness checklist gate (shown before every mastery sitting) ---- */
+  function readinessGateHtml(lid, L, retakeOpen) {
+    var pr = lessonProgress(session.num, pick.term, lid).rec;
+    var practiced = !!(pr.practice && pr.practice.attempts);
+    var items = [
+      "I have completed the lesson (Learn the rule).",
+      "I have tried the Practice Zone\u2014practice does not affect my official score.",
+      "I understand this Mastery Test can be submitted " + (retakeOpen ? "once more (my teacher allowed one retake)." : "only once."),
+      "I am ready to record my real mastery score now."
+    ].map(function (txt) {
+      return '<li class="rg-item" onclick="var c=this.querySelector(\'input\');if(event.target!==c){c.checked=!c.checked;}GA._rgSync(c);">' +
+        '<input type="checkbox" onchange="GA._rgSync(this)" onclick="event.stopPropagation()"><span>' + txt + '</span></li>';
+    }).join("");
+    return (retakeOpen
+        ? '<div class="banner retake" style="margin-bottom:14px"><div><strong>Your teacher has allowed one retake for this lesson.</strong><br>' +
+          'Your first score is kept for your teacher. The counted score will be this new attempt.' +
+          (pr.official.retake && pr.official.retake.note ? '<br><em>Note from your teacher: ' + esc(pr.official.retake.note) + '</em>' : '') +
+          '</div></div>'
+        : '') +
+      '<div class="readygate" role="group" aria-label="Mastery test readiness checklist">' +
+      '<h3>\uD83C\uDFAF Mastery Test \u2014 Submit ' + (retakeOpen ? "Once More" : "Once") + '</h3>' +
+      '<p class="section-sub" style="margin:6px 0 0">Before you begin, please confirm you are ready. ' +
+      (practiced ? 'Nice\u2014you have already practised this lesson.' : 'Tip: try the Practice Zone first so you walk in confident.') + '</p>' +
+      '<ul class="rg-list">' + items + '</ul>' +
+      '<div class="rg-cta"><button id="rgStart" class="btn gold sentence" disabled aria-disabled="true" onclick="GA._startMastery(\'' + lid + '\')">Start Mastery Test</button> ' +
+      '<button class="btn ghost sentence" onclick="GA._openLesson(\'' + lid + '\',\'practice\')">Back to Practice Zone</button></div>' +
+      '<div class="rg-hint">All four boxes must be ticked before the test unlocks. This protects your one official attempt.</div>' +
+      '</div>';
+  }
+  GA._rgSync = function (box) {
+    var li = box.closest(".rg-item"); if (li) li.classList.toggle("checked", box.checked);
+    var host = box.closest(".readygate"); if (!host) return;
+    var boxes = host.querySelectorAll(".rg-item input[type=checkbox]");
+    var all = boxes.length && Array.prototype.every.call(boxes, function (b) { return b.checked; });
+    var btn = host.querySelector("#rgStart");
+    if (btn) { btn.disabled = !all; btn.setAttribute("aria-disabled", String(!all)); }
+  };
+  GA._startMastery = function (lid) {
+    GA._officialReady = lid;         // pass the gate for this sitting only
+    mountOfficial(lid);
+  };
+
+  function renderOfficialTest(host, lid, L, retakeOpen) {
+    live = { lid: lid, kind: "official", bank: L.official, st: L.official.map(Grade.blank), retake: !!retakeOpen };
+    host.innerHTML =
+      '<div class="banner ' + (retakeOpen ? "retake" : "official") + '"><div><strong>Mastery Test \u00b7 ' + L.official.length + ' questions.</strong> ' +
+      (retakeOpen
+        ? 'This is your <u>teacher-approved retake</u>. It can be submitted once; your first attempt stays on record for your teacher.'
+        : 'You may submit it <u>once only</u>. There are no retries, so use the Practice Zone first.') +
+      ' When you submit, your score is recorded and locked.</div></div>' +
+      meterHtml("official", L.official.length) +
+      L.official.map(renderExercise).join("") +
+      '<div style="margin-top:6px"><button class="btn gold sentence" onclick="GA._submitOfficial(\'' + lid + '\')">' +
+      (retakeOpen ? "Submit retake \u2014 final" : "Submit Mastery Test \u2014 final") + '</button></div>';
+    bindBank(host, L.official, live.st);
+    attachMeter(host, L.official, live.st);
+  }
+
   function mountOfficial(lid) {
     var L = GA.registry.lessons[lid];
     var host = el("bankHost"); if (!host) return;
     var pr = lessonProgress(session.num, pick.term, lid).rec;
+    var off = pr.official;
+    var retakeOpen = !!(off && off.submitted && off.retake && off.retake.allowed && !off.retake.used);
 
-    if (pr.official && pr.official.submitted) {
-      // LOCKED — one-submission decision #1: render result, no inputs, no resubmit.
+    // LOCKED — submitted with no open retake.
+    if (off && off.submitted && !retakeOpen) {
+      var usedRetake = off.retake && off.retake.used;
+      var firstLine = (usedRetake && off.firstAttempt)
+        ? '<br><span style="color:var(--muted)">First attempt: ' + off.firstAttempt.pct + '% (' + off.firstAttempt.correct + '/' + off.firstAttempt.total + ') \u00b7 retake counted.</span>'
+        : '';
       host.innerHTML =
-        '<div class="banner lock"><div class="big">' + pr.official.pct + '%</div>' +
-        '<div><strong>Official test already submitted.</strong><br>' +
-        'Score ' + pr.official.correct + ' / ' + pr.official.total + ' · submitted ' + fmtDate(pr.official.at) +
-        '. This result is final and cannot be retaken.</div></div>' +
+        '<div class="banner lock"><div class="big">' + off.pct + '%</div>' +
+        '<div><strong>Mastery Test already submitted.</strong><br>' +
+        'Counted score ' + off.correct + ' / ' + off.total + ' \u00b7 submitted ' + fmtDate(off.at) +
+        '. This result is final.' + firstLine +
+        '<br><span style="color:var(--muted)">Need another chance? Your teacher can allow one retake.</span></div></div>' +
         imgSlot("assessment-complete.webp", "Assessment complete artwork", "empty-state-img", "Assessment complete") +
-        L.official.map(function (ex, i) {
-          var node = renderExercise(ex, i);
-          return node;
-        }).join("");
-      // replay stored answers + lock
-      var stored = pr.official.answers || L.official.map(Grade.blank);
+        L.official.map(function (ex, i) { return renderExercise(ex, i); }).join("");
+      var stored = off.answers || L.official.map(Grade.blank);
       bindBankReadonly(host, L.official, stored);
       gradeBank(host, L.official, stored, true);
       return;
     }
 
-    live = { lid: lid, kind: "official", bank: L.official, st: L.official.map(Grade.blank) };
-    host.innerHTML =
-      '<div class="banner official"><div><strong>Official mastery test \u00b7 ' + L.official.length + ' questions.</strong> You may submit it <u>once only</u>. ' +
-      'There are no retries, so use the Practice stage first. When you submit, your score is recorded and locked.</div></div>' +
-      meterHtml("official", L.official.length) +
-      L.official.map(renderExercise).join("") +
-      '<div style="margin-top:6px"><button class="btn gold sentence" onclick="GA._submitOfficial(\'' + lid + '\')">Submit official test — final</button></div>';
-    bindBank(host, L.official, live.st);
-    attachMeter(host, L.official, live.st);
+    // GATE — student must pass the readiness checklist for this sitting.
+    if (GA._officialReady !== lid) { host.innerHTML = readinessGateHtml(lid, L, retakeOpen); return; }
+
+    // TEST — fresh attempt or approved retake.
+    renderOfficialTest(host, lid, L, retakeOpen);
   }
 
   function bindBankReadonly(root, bank, st) {
@@ -2267,7 +2554,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
   };
   GA._setTerm = function (t) { pick.term = t; pick.grade = null; pick.stream = null; GA.go("#streams"); };
   GA._setStream = function (g, s) { pick.grade = g; pick.stream = s; GA.go("#lessons"); };
-  GA._openLesson = function (lid, tab) { GA._lid = lid; GA._tab = tab || "learn"; GA.go("#lesson"); };
+  GA._openLesson = function (lid, tab) { GA._lid = lid; GA._tab = tab || "learn"; GA._officialReady = null; GA.go("#lesson"); };
 
   GA._checkPractice = function (lid) {
     if (live.kind !== "practice" || live.lid !== lid) return;
@@ -2282,27 +2569,69 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
 
   GA._submitOfficial = function (lid) {
     if (live.kind !== "official" || live.lid !== lid) return;
-    // Confirmation before final submission (one-submission logic unchanged).
+    var isRetake = !!live.retake;
+    // Confirmation before final submission.
     var unanswered = live.bank.length - answeredCount(live.bank, live.st);
+    var tail = isRetake
+      ? "This is your approved retake and is final \u2014 it replaces the counted score."
+      : "This is final and cannot be retaken (unless your teacher allows it).";
     var msg = unanswered > 0
-      ? "You still have " + unanswered + " unanswered question" + (unanswered === 1 ? "" : "s") + ".\n\nSubmit the official test anyway? This is final and cannot be retaken."
-      : "Submit the official test now?\n\nThis is final and cannot be retaken.";
+      ? "You still have " + unanswered + " unanswered question" + (unanswered === 1 ? "" : "s") + ".\n\nSubmit the Mastery Test anyway? " + tail
+      : "Submit the Mastery Test now?\n\n" + tail;
     if (!window.confirm(msg)) return;
     var host = el("bankHost");
     var res = gradeBank(host, live.bank, live.st, true);
     var lp = lessonProgress(session.num, pick.term, lid);
-    // one-submission lock — write immutable record
-    lp.rec.official = { submitted: true, correct: res.correct, total: res.total, pct: res.pct, at: Date.now(), answers: live.st };
+    var prevOff = lp.rec.official || null;
+
+    var attempt = { submitted: true, correct: res.correct, total: res.total, pct: res.pct, at: Date.now(), answers: live.st };
+    if (isRetake && prevOff && prevOff.submitted) {
+      // Retake policy: latest valid attempt is COUNTED; first attempt kept for teacher review; retake consumed.
+      attempt.firstAttempt = prevOff.firstAttempt || {
+        correct: prevOff.correct, total: prevOff.total, pct: prevOff.pct, at: prevOff.at, answers: prevOff.answers
+      };
+      attempt.retake = {
+        allowed: true, used: true,
+        note: (prevOff.retake && prevOff.retake.note) || "",
+        grantedAt: (prevOff.retake && prevOff.retake.grantedAt) || null,
+        usedAt: Date.now()
+      };
+    }
+    lp.rec.official = attempt;
     store.save(lp.d);
+    GA._officialReady = null; // re-arm the gate for any future sitting
     if (GA.cloud && GA.cloud.enabled()) GA.cloud.queueProgress(pick.term, lid, lp.rec.practice, lp.rec.official);
     // freeze UI immediately
     host.querySelectorAll(".exercise").forEach(function (n) { n.classList.add("done"); });
     var meter = host.querySelector(".bank-meter"); if (meter) meter.remove();
+    var firstLine = (attempt.firstAttempt)
+      ? '<br><span style="color:var(--muted)">First attempt: ' + attempt.firstAttempt.pct + '% \u00b7 retake counted.</span>' : '';
     var existing = host.querySelector(".banner");
     if (existing) existing.outerHTML =
-      '<div class="banner lock"><div class="big">' + res.pct + '%</div><div><strong>Submitted and locked.</strong><br>Score ' +
-      res.correct + ' / ' + res.total + '. This result is final.</div></div>';
+      '<div class="banner lock"><div class="big">' + res.pct + '%</div><div><strong>Submitted and locked.</strong><br>Counted score ' +
+      res.correct + ' / ' + res.total + '. Your mastery score has been saved.' + firstLine + '</div></div>';
     var btn = host.querySelector(".btn.gold"); if (btn) btn.remove();
+  };
+
+  /* ---- teacher action: grant exactly one retake for a student+lesson ----
+     A retake can only be issued from the teacher dashboard. Stored on the
+     student's locked official record so the student side can re-open the
+     test exactly once. (Cloud parity: see RLS TODO in the cloud section.) */
+  GA._grantRetake = function (num, term, lid, note) {
+    num = String(num || "").trim();
+    var lp = lessonProgress(num, term, lid);
+    var off = lp.rec.official;
+    if (!off || !off.submitted) { alert("This student has no submitted Mastery Test for that lesson yet, so there is nothing to retake."); return; }
+    if (off.retake && off.retake.allowed && !off.retake.used) { alert("A retake is already open for this student and lesson."); return; }
+    off.retake = { allowed: true, used: false, note: String(note || "").trim(), grantedAt: Date.now() };
+    store.save(lp.d);
+    if (GA.cloud && GA.cloud.enabled()) GA.cloud.queueProgress(term, lid, lp.rec.practice, lp.rec.official);
+    render();
+  };
+  GA._revokeRetake = function (num, term, lid) {
+    var lp = lessonProgress(String(num || "").trim(), term, lid);
+    var off = lp.rec.official;
+    if (off && off.retake && off.retake.allowed && !off.retake.used) { delete off.retake; store.save(lp.d); render(); }
   };
 
   /* ---------- teacher peek (registry + raw submissions) -------------- */
@@ -2896,6 +3225,9 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<div class="t-banner">' + imgSlot("teacher-dashboard-banner.webp", "Teacher dashboard banner artwork", "", "Teacher banner") +
       '<div class="tb-text"><div class="eyebrow">Teacher area</div><h1>Class dashboard</h1></div></div>' +
       '<p class="section-sub">Private to this device. Students are shown by number — add your own labels to map them to real names.</p>' +
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-6px 0 14px">' + cloudStatusPill() +
+        '<span class="cloud-pill is-online" style="background:var(--navy-50);border-color:var(--line);color:var(--navy-700)"><span class="dot" style="background:var(--navy-600)"></span>Signed in as teacher</span></div>' +
+      dashJump() +
       '<h3 style="margin:0 0 12px">Classes &amp; pathways <span style="color:var(--muted);font-weight:normal;font-size:.82rem">— pick one to open its roster</span></h3>' +
       pwGroups +
       '<div style="margin:8px 0 24px"><button class="btn ghost small sentence" onclick="GA.go(\'#teacher-peek\')">Registry &amp; submissions</button> ' +
@@ -2907,6 +3239,8 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     if (!(teacher.term && teacher.stream)) {
       return head + '<div class="empty-state">' + imgSlot("empty-classroom.webp", "Empty classroom artwork", "", "No class selected") +
         '<p>No pathway selected. Choose a grade \u00b7 stream above to see its roster.</p></div>' +
+        rosterImportCard() +
+        moduleLibraryCard() +
         (GA.cloud.enabled() ? cloudAccountsCard() : "") + '</div>';
     }
     var pw = GA.registry.pathways[pkey(teacher.term, teacher.grade, teacher.stream)];
@@ -2955,6 +3289,9 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       classProgressCard(roster, allLessons) +
       byLessonCard(roster, allLessons) +
       rosterCard + intervCard +
+      retakeCard(teacher.term, teacher.grade, teacher.stream, roster, allLessons) +
+      rosterImportCard() +
+      moduleLibraryCard() +
       (GA.cloud.enabled() ? cloudAccountsCard() : "") + '</div>';
   };
 
@@ -2964,6 +3301,199 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     else { el("view").innerHTML = teacherAuthGate("Incorrect code. Try again."); var t = el("tcode"); if (t) t.focus(); }
   };
   GA._teacherPick = function (term, grade, stream) { teacher.term = term; teacher.grade = grade; teacher.stream = stream; render(); };
+
+  /* ====================================================================
+     UPGRADE: cloud status · module library · roster import · retakes
+     (additive teacher-side helpers; all storage is local + privacy-safe)
+     ==================================================================== */
+
+  /* ---- cloud status pill ---- */
+  function cloudStatusPill() {
+    var configured = !!(GA.cloudConfig && GA.cloudConfig.url && GA.cloudConfig.key);
+    var enabled = !!(GA.cloud && GA.cloud.enabled && GA.cloud.enabled());
+    var online = enabled && GA.cloud.online && GA.cloud.online();
+    function pill(cls, label) { return '<span class="cloud-pill ' + cls + '"><span class="dot"></span>' + label + '</span>'; }
+    if (window.GA_DEMO_MODE === true) return pill("is-demo", "Offline demo mode");
+    if (enabled && online) return pill("is-online", "Cloud online");
+    if (configured) return pill("is-offline", "Cloud unavailable");
+    return pill("is-offline", "Offline build");
+  }
+
+  /* ---- Module Library: manifest x registry, available vs coming soon ---- */
+  function moduleLibraryCard() {
+    var cov = GA.coverage();
+    var rows = [];
+    cov.terms.forEach(function (tm) {
+      cov.grades.forEach(function (g) {
+        cov.streams.forEach(function (sm) {
+          var c = cov.cell(tm.id, g, sm.id);
+          if (c.available) {
+            var p = c.pathway;
+            rows.push('<tr><td>' + esc(tm.label) + '</td><td>Grade ' + esc(g) + '</td><td>' + esc(sm.label) + '</td>' +
+              '<td>' + esc(p.cefr || "\u2014") + '</td><td>' + c.lessons + '</td><td>' + c.practiceQ + '</td><td>' + c.officialQ + '</td>' +
+              '<td class="st-ok">Available</td></tr>');
+          } else {
+            rows.push('<tr class="soon"><td>' + esc(tm.label) + '</td><td>Grade ' + esc(g) + '</td><td>' + esc(sm.label) + '</td>' +
+              '<td>\u2014</td><td>\u2014</td><td>\u2014</td><td>\u2014</td><td class="st-soon">Coming soon</td></tr>');
+          }
+        });
+      });
+    });
+    var availCount = Object.keys(GA.registry.pathways).length;
+    return '<h3 id="dash-modules" style="margin:28px 0 10px">Module Library <span style="color:var(--muted);font-weight:normal;font-size:.82rem">\u2014 ' + availCount + ' uploaded \u00b7 the rest unlock automatically when their data files are added</span></h3>' +
+      '<div class="card" style="padding:0;overflow:auto"><table class="modlib">' +
+      '<tr><th>Term</th><th>Grade</th><th>Stream</th><th>CEFR</th><th>Lessons</th><th>Practice Q</th><th>Mastery Q</th><th>Status</th></tr>' +
+      rows.join("") + '</table></div>';
+  }
+
+  /* ---- Roster import (TXT / JSON). Names are teacher-side labels only. ---- */
+  GA._rosterImport = { rows: [] };
+
+  function rosterMakeRow(num, name, raw) {
+    num = String(num == null ? "" : num).trim();
+    name = String(name == null ? "" : name).trim();
+    var error = "";
+    if (!num) error = "Missing student number";
+    return { num: num, name: name, raw: raw, error: error };
+  }
+  function parseRosterText(text) {
+    return String(text || "").split(/\r?\n/).map(function (line) {
+      var raw = line.trim(); if (!raw) return null;
+      var num = "", name = "", m;
+      if ((m = /^([^\s,;|\t-]+)\s*[-,;|\t]\s*(.+)$/.exec(raw))) { num = m[1]; name = m[2]; }     // num - name | num, name
+      else if ((m = /^(\S+)\s+(.+)$/.exec(raw))) { num = m[1]; name = m[2]; }                    // num name
+      else { num = raw; }                                                                        // num only
+      return rosterMakeRow(num, name, raw);
+    }).filter(Boolean);
+  }
+  function parseRosterJSON(text) {
+    var data; try { data = JSON.parse(text); } catch (_) { return null; }
+    if (!Array.isArray(data)) { if (data && Array.isArray(data.students)) data = data.students; else return null; }
+    return data.map(function (o) {
+      if (o == null) return rosterMakeRow("", "", "(null entry)");
+      if (typeof o === "string" || typeof o === "number") return rosterMakeRow(o, "", String(o));
+      var num = o.number != null ? o.number : (o.num != null ? o.num : (o.id != null ? o.id : ""));
+      var name = o.name != null ? o.name : (o.label != null ? o.label : "");
+      return rosterMakeRow(num, name, JSON.stringify(o));
+    });
+  }
+  function looksLikeJSON(t) { t = String(t || "").trim(); return t.charAt(0) === "[" || t.charAt(0) === "{"; }
+
+  GA._rosterFile = function (input) {
+    var f = input && input.files && input.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () { var ta = el("rosterText"); if (ta) ta.value = String(rd.result || ""); GA._rosterParse(); };
+    rd.readAsText(f);
+  };
+  GA._rosterClear = function () {
+    var ta = el("rosterText"); if (ta) ta.value = "";
+    GA._rosterImport.rows = [];
+    var pv = el("rosterPreview"); if (pv) pv.innerHTML = "";
+  };
+  GA._rosterParse = function () {
+    var ta = el("rosterText"); var pv = el("rosterPreview"); if (!ta || !pv) return;
+    var text = ta.value;
+    var rows = looksLikeJSON(text) ? parseRosterJSON(text) : parseRosterText(text);
+    if (rows === null) { pv.innerHTML = '<div class="banner warn" style="margin-top:12px"><div><strong>That does not look like valid JSON.</strong> Check the brackets/quotes, or paste a plain list instead.</div></div>'; GA._rosterImport.rows = []; return; }
+    // duplicate detection (within this import)
+    var seen = {};
+    rows.forEach(function (r) {
+      if (!r.error && r.num) { if (seen[r.num]) r.dup = true; else seen[r.num] = true; }
+    });
+    GA._rosterImport.rows = rows;
+    var valid = rows.filter(function (r) { return !r.error && !r.dup; });
+    var bad = rows.filter(function (r) { return r.error; });
+    var dups = rows.filter(function (r) { return r.dup; });
+    if (!rows.length) { pv.innerHTML = '<div class="section-sub" style="margin-top:12px">Nothing to preview yet \u2014 paste a roster above.</div>'; return; }
+    var bodyRows = rows.map(function (r) {
+      var cls = r.error ? " class=\"bad\"" : (r.dup ? " class=\"dup\"" : "");
+      var status = r.error ? r.error : (r.dup ? "Duplicate number \u2014 skipped" : "Ready");
+      return '<tr' + cls + '><td>' + esc(r.num || "\u2014") + '</td><td>' + esc(r.name || "\u2014") + '</td><td>' + esc(status) + '</td></tr>';
+    }).join("");
+    pv.innerHTML =
+      '<div class="import-summary" style="margin:14px 0 8px">' +
+        '<span class="pill ok">' + valid.length + ' ready to import</span>' +
+        (dups.length ? '<span class="pill warnp">' + dups.length + ' duplicate' + (dups.length === 1 ? "" : "s") + '</span>' : '') +
+        (bad.length ? '<span class="pill errp">' + bad.length + ' invalid line' + (bad.length === 1 ? "" : "s") + '</span>' : '') +
+      '</div>' +
+      '<div class="card" style="padding:0;overflow:auto;max-height:280px"><table class="preview-table">' +
+      '<tr><th>Student #</th><th>Name (teacher-side)</th><th>Status</th></tr>' + bodyRows + '</table></div>' +
+      '<div style="margin-top:12px"><button class="btn gold sentence"' + (valid.length ? '' : ' disabled aria-disabled="true"') +
+        ' onclick="GA._rosterConfirm()">Import ' + valid.length + ' student' + (valid.length === 1 ? "" : "s") + '</button>' +
+        ' <span class="rg-hint" style="margin-left:6px">Names are stored only on this device and never shown to students.</span></div>';
+  };
+  GA._rosterConfirm = function () {
+    var rows = (GA._rosterImport.rows || []).filter(function (r) { return !r.error && !r.dup; });
+    if (!rows.length) return;
+    var named = 0;
+    rows.forEach(function (r) { if (r.name) { TeacherNotes.set(TID, r.num, r.name); named++; } });
+    GA._rosterImport.rows = [];
+    try { if (GA.fx) GA.fx.play("success"); } catch (_) {}
+    alert("Imported " + rows.length + " student" + (rows.length === 1 ? "" : "s") + (named ? (" \u00b7 " + named + " with names") : "") +
+      ".\nNames are saved as private teacher-side labels and appear next to each student number on your side only.");
+    render();
+  };
+  function rosterImportCard() {
+    return '<h3 id="dash-roster-import" style="margin:28px 0 10px">Import class roster</h3>' +
+      '<div class="card"><div class="import-box">' +
+      '<p class="section-sub" style="margin:0">Paste a list, or choose a <code>.txt</code> / <code>.json</code> file. Student numbers are the identity; names are optional and stay on this device \u2014 students always appear by number.</p>' +
+      '<div class="import-grid">' +
+        '<div><label class="fld" for="rosterText">Paste roster</label>' +
+          '<textarea id="rosterText" class="import-ta" placeholder="90401 - Ahmed&#10;90402, Saeed&#10;90403 Hamdan&#10;90404"></textarea>' +
+          '<div style="margin-top:8px"><label class="fld" for="rosterFile">\u2026 or import a file</label>' +
+          '<input type="file" id="rosterFile" accept=".txt,.json,application/json,text/plain" onchange="GA._rosterFile(this)"></div></div>' +
+        '<div><label class="fld">Accepted formats</label>' +
+          '<div class="card" style="background:var(--navy-50);font-family:var(--sans-ui);font-size:.82rem;line-height:1.9">' +
+            '<code>90401 - Ahmed</code><br><code>90401, Ahmed</code><br><code>90401 Ahmed</code><br><code>90401</code> (number only)<br>' +
+            'JSON: <code>[{"number":"90401","name":"Ahmed"}]</code></div></div>' +
+      '</div>' +
+      '<div><button class="btn sentence" onclick="GA._rosterParse()">Preview import</button> ' +
+      '<button class="btn ghost sentence" onclick="GA._rosterClear()">Clear</button></div>' +
+      '<div id="rosterPreview"></div>' +
+      '</div></div>';
+  }
+
+  /* ---- Retake permissions (per pathway) ---- */
+  GA._grantRetakePrompt = function (num, term, lid) {
+    var note = window.prompt("Allow ONE retake for student #" + num + ".\n\nOptional note for the student (why a retake is allowed):", "");
+    if (note === null) return;   // cancelled
+    GA._grantRetake(num, term, lid, note);
+  };
+  function retakeCard(term, grade, stream, roster, lessonIds) {
+    var rows = [];
+    roster.forEach(function (r) {
+      lessonIds.forEach(function (lid) {
+        var sc = r.model.scores[lid];
+        if (!sc || !sc.official) return;   // only submitted mastery tests can be retaken
+        var off = lessonProgress(r.num, term, lid).rec.official || {};
+        var L = GA.registry.lessons[lid];
+        var status, action;
+        if (off.retake && off.retake.allowed && !off.retake.used) {
+          status = '<span style="color:var(--accent-violet);font-weight:600">Retake open</span>';
+          action = '<button class="btn ghost small" onclick="GA._revokeRetake(\'' + r.num + '\',\'' + term + '\',\'' + lid + '\')">Revoke</button>';
+        } else if (off.retake && off.retake.used) {
+          status = '<span style="color:var(--muted)">Retake used</span>';
+          action = '<span style="color:var(--muted);font-size:.8rem">first ' + (off.firstAttempt ? off.firstAttempt.pct + '%' : "\u2014") + ' \u2192 counted ' + off.pct + '%</span>';
+        } else {
+          status = '<span style="color:var(--success)">Locked</span>';
+          action = '<button class="btn ghost small" onclick="GA._grantRetakePrompt(\'' + r.num + '\',\'' + term + '\',\'' + lid + '\')">Allow one retake</button>';
+        }
+        rows.push('<tr><td>' + studentTag(r.num) + '</td><td>' + esc(L ? L.title : lid) + '</td><td>' + off.pct + '%</td><td>' + status + '</td><td>' + action + '</td></tr>');
+      });
+    });
+    var body = rows.length ? rows.join("") : '<tr><td colspan="5" class="empty" style="padding:24px">No submitted Mastery Tests in this pathway yet. Retakes can be allowed once a student has submitted.</td></tr>';
+    return '<h3 id="dash-retakes" style="margin:28px 0 10px">Retake permissions <span style="color:var(--muted);font-weight:normal;font-size:.82rem">\u2014 mastery tests are one-submission by default; allow exactly one retake per student/lesson</span></h3>' +
+      '<div class="card" style="padding:0;overflow:auto"><table class="student-list">' +
+      '<tr><th>Student</th><th>Lesson</th><th>Counted</th><th>Status</th><th>Action</th></tr>' + body + '</table></div>';
+  }
+
+  function dashJump() {
+    return '<div class="dash-jump" aria-label="Dashboard sections">' +
+      '<a onclick="var e=document.getElementById(\'dash-roster-import\');e&&e.scrollIntoView({behavior:\'smooth\'})">Roster import</a>' +
+      '<a onclick="var e=document.getElementById(\'dash-retakes\');e&&e.scrollIntoView({behavior:\'smooth\'})">Retake permissions</a>' +
+      '<a onclick="var e=document.getElementById(\'dash-modules\');e&&e.scrollIntoView({behavior:\'smooth\'})">Module library</a>' +
+      '</div>';
+  }
 
   GA._toggleTerm = function (t) {
     GA._expandedTerm = (GA._expandedTerm === t) ? null : t;   // accordion: same term closes; different term replaces
@@ -3673,6 +4203,26 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
        method returns null          -> cloud not configured -> use local logic
        method returns {ok:true,...} -> success
        method returns {ok:false,..} -> server reachable but rejected / offline
+
+     ------------------------------------------------------------------
+     REQUIRED SUPABASE ROW-LEVEL-SECURITY (RLS) POLICIES — do this in the
+     Supabase dashboard before any real deployment. The publishable key in
+     the client is only safe BECAUSE these policies are enforced server-side:
+       1. Teachers can SELECT/UPDATE only rows they own
+          (e.g. classes.teacher_uid = auth.uid()).
+       2. Students can SELECT/UPDATE only their OWN progress rows; never
+          another student's. Match on the teacher-issued identity, not a
+          self-claimed value.
+       3. No student may INSERT/UPDATE/DELETE another student's records.
+       4. Retake permissions may be issued ONLY by the owning teacher
+          (INSERT/UPDATE on a retakes/permissions table guarded by
+          teacher_uid = auth.uid()); students can read their own grant but
+          never set allowed=true themselves.
+       5. Reports/certificates are scoped to the issuing teacher's ownership.
+       6. Student access codes must be HASHED server-side (never stored or
+          compared in plaintext); the client keeps the code in memory only.
+       7. The SECRET (service-role) key must never reach the client — only
+          the publishable key belongs in GA.cloudConfig.
      ==================================================================== */
   GA.cloud = (function () {
     var cfg = (GA.cloudConfig || {});
@@ -3890,8 +4440,16 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
           if (String(a.code) !== String(code).trim()) return { ok: false, error: "That code does not match this username." };
           return { ok: true, num: a.num || username };
         }
-        // TODO(backend): verify teacher-issued username/code. Demo: accept and use username as identity.
-        return { ok: true, num: username };
+        // Unknown student. In production we must NOT silently invent an account.
+        // Accept only when (a) explicit offline demo mode is on, or
+        // (b) the cloud is not configured at all (pure offline file:// build).
+        var cloudConfigured = !!(GA.cloudConfig && GA.cloudConfig.url && GA.cloudConfig.key);
+        if (window.GA_DEMO_MODE === true || !cloudConfigured) {
+          // TODO(backend): in production this branch should never run; logins are
+          // verified server-side against teacher-issued (username, code) pairs.
+          return { ok: true, num: username };
+        }
+        return { ok: false, error: "Cloud connection unavailable. Please try again later, or ask your teacher to check your login." };
       },
       // handleTeacherSignup(profile) → {ok, profile} | {ok:false, error}
       handleTeacherSignup: function (p) {
