@@ -44,7 +44,9 @@
        registers becomes "available" automatically, and any registered term
        not listed here is auto-added. Edit term ids/labels here only if a
        future data file registers a term id that differs from the guesses
-       below (T2-2627 / T3-2627), so the "coming soon" labels stay tidy.
+       below match the data (T1-2627 / T2-2526 / T3-2526). Term 1 is AY
+       2026–27; Terms 2 & 3 are AY 2025–26. T3 shows "coming soon" until
+       ga_data_T3_*.js (T3-2526) is added next to this file.
      ==================================================================== -->
 <script>
   window.GA = window.GA || {};
@@ -61,11 +63,11 @@
     // data file registers a pathway under the matching term id.
     terms: [
       { id: "T1-2627", num: 1, label: "Term 1 · AY 2026\u201327" },
-      { id: "T2-2627", num: 2, label: "Term 2 · AY 2026\u201327" },
-      { id: "T3-2627", num: 3, label: "Term 3 · AY 2026\u201327" }
+      { id: "T2-2526", num: 2, label: "Term 2 · AY 2026\u201327" },
+      { id: "T3-2526", num: 3, label: "Term 3 · AY 2026\u201327" }
     ]
   };
-</script></script>
+</script>
 
 <style>
 :root{
@@ -4773,9 +4775,11 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
 </script>
 <!-- ====================================================================
      STEP 4 · DISPLAY PATCHES  (academic-year normalisation)
-     Forces every academic-year label to one canonical value, regardless
-     of what each data module declares. Runs after the engine has
-     registered all modules, then repaints once so corrected labels show.
+     Per project decision, EVERY academic-year label is displayed as one
+     canonical value (AY 2026–2027), regardless of what each data module
+     declares (Term 2/3 data say 2025–26; we override the display only).
+     Term IDs are left untouched so module matching still works. Runs after
+     registration, then repaints once so corrected labels show.
      ==================================================================== -->
 <script>
 (function () {
@@ -4788,7 +4792,8 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     s = s.replace(/\b20\d{2}\s*[\u2013\u2014\-]\s*(?:20)?\d{2,4}\b/g, AY);
     return s;
   }
-  // Normalise stored labels so every direct read (term cards, crumbs, tables) matches.
+  // Normalise stored labels so every direct read (term cards, crumbs, tables,
+  // reports, certificates, Module Library) shows the one canonical year.
   try {
     Object.keys(GA.registry.pathways).forEach(function (k) {
       var p = GA.registry.pathways[k]; if (p && p.termLabel) p.termLabel = normAY(p.termLabel);
@@ -4796,8 +4801,11 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     Object.keys(GA.registry.terms).forEach(function (t) {
       var T = GA.registry.terms[t]; if (T && T.label) T.label = normAY(T.label);
     });
+    if (GA.manifest && GA.manifest.terms) {
+      GA.manifest.terms.forEach(function (tm) { if (tm && tm.label) tm.label = normAY(tm.label); });
+    }
   } catch (e) {}
-  // Override metadata helpers (shared object → internal callers pick these up).
+  // Override metadata helpers if exposed (internal callers pick these up).
   if (GA._meta) {
     GA._meta.ayPhrase = function () { return AY; };
     var _tp = GA._meta.termPhrase;
