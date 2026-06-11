@@ -685,7 +685,9 @@ table.peek th{font-family:var(--sans-ui);font-size:.7rem;letter-spacing:1px;text
   body.printing-report .page{padding:0;max-width:none}
   body.printing-report .report-sheet{border:none!important;border-top:4px solid var(--navy-900)!important;box-shadow:none!important;border-radius:0!important;padding:8mm!important;page-break-after:always;break-after:page;background:#fff!important;font-size:.84rem;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body.printing-report .report-sheet:last-child{page-break-after:auto;break-after:auto}
-  body.printing-report .r-header,body.printing-report .r-student-info,body.printing-report .r-score-tile,body.printing-report .r-badges{page-break-inside:avoid;break-inside:avoid}
+  body.printing-report .r-header,body.printing-report .r-student-info,body.printing-report .r-score-tile,body.printing-report .r-badges,body.printing-report .r-section,body.printing-report .r-perf-grid,body.printing-report .r-skills,body.printing-report .r-skill,body.printing-report .r-outcomes,body.printing-report .r-outcome-col,body.printing-report .r-comment-reco-row,body.printing-report .r-comment,body.printing-report .r-reco,body.printing-report .r-arabic,body.printing-report .r-signature{page-break-inside:avoid;break-inside:avoid}
+  body.printing-report .r-section-head,body.printing-report .r-ornament{page-break-after:avoid;break-after:avoid}
+  body.printing-report .report-sheet{orphans:3;widows:3}
   body.printing-report .r-score-tile,body.printing-report .r-skill-bar-fill,body.printing-report .r-engagement,body.printing-report .r-score-band,body.printing-report .r-outcome-col,body.printing-report .r-comment,body.printing-report .r-reco,body.printing-report .r-summary-text,body.printing-report .r-arabic,body.printing-report .r-student-info{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body.printing-report .r-comment-reco-row{display:grid;grid-template-columns:1.2fr 1fr;gap:10px}
   @page{size:A4;margin:0}
@@ -2671,8 +2673,9 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     var userField = tag
       ? '<div><label class="fld" for="csUser">Username</label><div style="display:flex;align-items:stretch"><span style="font-family:var(--sans-ui);font-size:.92rem;color:var(--navy-700);background:var(--navy-50);border:1px solid var(--line);border-right:none;border-radius:var(--r-sm) 0 0 var(--r-sm);padding:0 8px 0 12px;display:flex;align-items:center;white-space:nowrap">' + esc(tag) + '-</span><input class="txt" id="csUser" autocomplete="off" placeholder="amal or 90412" style="border-radius:0 var(--r-sm) var(--r-sm) 0"></div></div>'
       : '<div><label class="fld" for="csUser">Username</label><input class="txt" id="csUser" autocomplete="off" placeholder="e.g. 9a-amal"></div>';
-    return '<h3 style="margin:18px 0 10px">Class accounts <span style="color:var(--muted);font-weight:normal">— student logins</span></h3>' +
-      '<div class="card">' +
+    return '<details class="cloud-accounts" style="margin-top:30px">' +
+      '<summary style="cursor:pointer;font-family:var(--serif-display);font-size:1.15rem;color:var(--navy-800);font-weight:600;padding:6px 0;list-style:none">Class accounts <span style="color:var(--muted);font-weight:normal;font-family:var(--sans-ui);font-size:.82rem">— student logins (tap to expand)</span></summary>' +
+      '<div class="card" style="margin-top:10px">' +
         '<p class="section-sub" style="margin-top:0">Issue a login so a student can sign in on any device and have their progress sync to your class space. Students sign in with a username and code &mdash; never their name.' +
         (tag ? ' Every username is automatically prefixed with your class tag <code>' + esc(tag) + '-</code> so it can never clash with another teacher\u2019s. Students type the full username shown on their card.' : '') + '</p>' +
         '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">' +
@@ -2698,7 +2701,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
             '<div id="csImpResults" style="margin-top:6px"></div>' +
           '</div>' +
         '</details>' +
-      '</div>';
+      '</div></details>';
   }
 
   Views.teacher = function () {
@@ -2749,11 +2752,12 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<div style="margin:8px 0 24px"><button class="btn ghost small sentence" onclick="GA.go(\'#teacher-peek\')">Registry &amp; submissions</button> ' +
       (GA.cloud.enabled() ? '<button class="btn ghost small sentence" onclick="GA._syncClassProgress()">Refresh from cloud</button> ' : '') +
       '<button class="btn ghost small sentence" onclick="GA._teacherLogout()">Sign out</button></div>' +
-      '<div style="margin:-14px 0 24px;font-family:var(--sans-ui);font-size:.78rem;color:var(--muted)">Reports &amp; certificates are signed by <strong style="color:var(--navy-800)">' + esc(signatureFor().name) + '</strong> \u00b7 ' + esc(signatureFor().title) + ' <button class="btn ghost small sentence" style="margin-left:8px" onclick="GA._editSignature()">Edit signature</button></div>' + (GA.cloud.enabled() ? cloudAccountsCard() : "");
+      '<div style="margin:-14px 0 24px;font-family:var(--sans-ui);font-size:.78rem;color:var(--muted)">Reports &amp; certificates are signed by <strong style="color:var(--navy-800)">' + esc(signatureFor().name) + '</strong> \u00b7 ' + esc(signatureFor().title) + ' <button class="btn ghost small sentence" style="margin-left:8px" onclick="GA._editSignature()">Edit signature</button></div>';
 
     if (!(teacher.term && teacher.stream)) {
       return head + '<div class="empty-state">' + imgSlot("empty-classroom.webp", "Empty classroom artwork", "", "No class selected") +
-        '<p>No pathway selected. Choose a grade \u00b7 stream above to see its roster.</p></div></div>';
+        '<p>No pathway selected. Choose a grade \u00b7 stream above to see its roster.</p></div>' +
+        (GA.cloud.enabled() ? cloudAccountsCard() : "") + '</div>';
     }
     var pw = GA.registry.pathways[pkey(teacher.term, teacher.grade, teacher.stream)];
     var allLessons = pw.chapters.reduce(function (a, c) { return a.concat(c.lessons); }, []);
@@ -2791,7 +2795,8 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       submissionsCard(teacher.term, allLessons) +
       classProgressCard(roster, allLessons) +
       byLessonCard(roster, allLessons) +
-      rosterCard + intervCard + '</div>';
+      rosterCard + intervCard +
+      (GA.cloud.enabled() ? cloudAccountsCard() : "") + '</div>';
   };
 
   GA._teacherAuth = function () {
