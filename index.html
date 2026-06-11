@@ -2577,6 +2577,41 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<button class="btn ghost" onclick="GA.go(\'#home\')">Cancel</button></div></div></div>';
   }
 
+  // Class accounts card — issue/update student logins (cloud only).
+  function cloudAccountsCard() {
+    var tag = teacherTag();
+    var userField = tag
+      ? '<div><label class="fld" for="csUser">Username</label><div style="display:flex;align-items:stretch"><span style="font-family:var(--sans-ui);font-size:.92rem;color:var(--navy-700);background:var(--navy-50);border:1px solid var(--line);border-right:none;border-radius:var(--r-sm) 0 0 var(--r-sm);padding:0 8px 0 12px;display:flex;align-items:center;white-space:nowrap">' + esc(tag) + '-</span><input class="txt" id="csUser" autocomplete="off" placeholder="amal or 90412" style="border-radius:0 var(--r-sm) var(--r-sm) 0"></div></div>'
+      : '<div><label class="fld" for="csUser">Username</label><input class="txt" id="csUser" autocomplete="off" placeholder="e.g. 9a-amal"></div>';
+    return '<h3 style="margin:18px 0 10px">Class accounts <span style="color:var(--muted);font-weight:normal">— student logins</span></h3>' +
+      '<div class="card">' +
+        '<p class="section-sub" style="margin-top:0">Issue a login so a student can sign in on any device and have their progress sync to your class space. Students sign in with a username and code &mdash; never their name.' +
+        (tag ? ' Every username is automatically prefixed with your class tag <code>' + esc(tag) + '-</code> so it can never clash with another teacher\u2019s. Students type the full username shown on their card.' : '') + '</p>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">' +
+          userField +
+          '<div><label class="fld" for="csNum">Student number</label><input class="txt" id="csNum" inputmode="numeric" autocomplete="off" placeholder="e.g. 90412"></div>' +
+          '<div><label class="fld" for="csCode">Login code</label><input class="txt" id="csCode" autocomplete="off" placeholder="min 4 characters"></div>' +
+          '<button class="btn ghost" onclick="GA._genCode()" title="Generate an easy-to-read code">Generate</button>' +
+          '<button class="btn gold" onclick="GA._addStudent()">Issue / update login</button>' +
+        '</div>' +
+        '<p id="csErr" style="font-family:var(--sans-ui);font-size:.8rem;margin:10px 0 0;min-height:1em"></p>' +
+        '<div id="ga-cloud-roster" style="margin-top:14px"></div>' +
+        '<details style="margin-top:16px"><summary style="cursor:pointer;font-family:var(--sans-ui);font-size:.82rem;color:var(--navy-700);font-weight:600">Import a whole class</summary>' +
+          '<div style="margin-top:12px">' +
+            '<p class="section-sub" style="margin-top:0">Paste one student number per line. A code is generated for each unless you add one as <code>number, code</code>.' +
+            (tag ? ' Usernames are auto-prefixed with your class tag <code>' + esc(tag) + '-</code>.' : '') + ' The optional prefix below is just for your own grouping (e.g. <em>9A</em>).</p>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px">' +
+              '<div><label class="fld" for="csImpPrefix">Group prefix (optional)</label><input class="txt" id="csImpPrefix" autocomplete="off" placeholder="e.g. 9A" style="max-width:160px"></div>' +
+            '</div>' +
+            '<textarea class="txt" id="csImport" rows="5" placeholder="90412&#10;90413&#10;90414, custom-code&#10;90415" style="width:100%;font-family:var(--sans-ui)"></textarea>' +
+            '<div style="margin-top:10px"><button class="btn gold" onclick="GA._importRoster()">Import &amp; issue logins</button></div>' +
+            '<p id="csImpStatus" style="font-family:var(--sans-ui);font-size:.8rem;margin:10px 0 0;min-height:1em"></p>' +
+            '<div id="csImpResults" style="margin-top:6px"></div>' +
+          '</div>' +
+        '</details>' +
+      '</div>';
+  }
+
   Views.teacher = function () {
     if (!teacher.authed) return teacherAuthGate("");
 
@@ -2595,8 +2630,9 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<h3 style="margin:0 0 8px">Classes &amp; pathways</h3>' +
       '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px">' + pwBlocks + '</div>' +
       '<div style="margin:8px 0 24px"><button class="btn ghost small sentence" onclick="GA.go(\'#teacher-peek\')">Registry &amp; submissions</button> ' +
+      (GA.cloud.enabled() ? '<button class="btn ghost small sentence" onclick="GA._syncClassProgress()">Refresh from cloud</button> ' : '') +
       '<button class="btn ghost small sentence" onclick="GA._teacherLogout()">Sign out</button></div>' +
-      '<div style="margin:-14px 0 24px;font-family:var(--sans-ui);font-size:.78rem;color:var(--muted)">Reports &amp; certificates are signed by <strong style="color:var(--navy-800)">' + esc(signatureFor().name) + '</strong> \u00b7 ' + esc(signatureFor().title) + ' <button class="btn ghost small sentence" style="margin-left:8px" onclick="GA._editSignature()">Edit signature</button></div>';
+      '<div style="margin:-14px 0 24px;font-family:var(--sans-ui);font-size:.78rem;color:var(--muted)">Reports &amp; certificates are signed by <strong style="color:var(--navy-800)">' + esc(signatureFor().name) + '</strong> \u00b7 ' + esc(signatureFor().title) + ' <button class="btn ghost small sentence" style="margin-left:8px" onclick="GA._editSignature()">Edit signature</button></div>' + (GA.cloud.enabled() ? cloudAccountsCard() : "");
 
     if (!(teacher.term && teacher.stream)) {
       return head + '<div class="empty-state">' + imgSlot("empty-classroom.webp", "Empty classroom artwork", "", "No class selected") +
@@ -2643,6 +2679,124 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     else { el("view").innerHTML = teacherAuthGate("Incorrect code. Try again."); var t = el("tcode"); if (t) t.focus(); }
   };
   GA._teacherPick = function (term, grade, stream) { teacher.term = term; teacher.grade = grade; teacher.stream = stream; render(); };
+
+  // ---- Class accounts (cloud student logins) ----
+  // Easy-to-read code: 6 chars, no ambiguous glyphs (no I/L/O/0/1).
+  function genCode() {
+    var A = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", s = "";
+    var rnd = (window.crypto && window.crypto.getRandomValues)
+      ? function (n) { var a = new Uint32Array(n); window.crypto.getRandomValues(a); return a; }
+      : function (n) { var a = []; for (var i = 0; i < n; i++) a.push(Math.floor(Math.random() * 4294967296)); return a; };
+    var r = rnd(6);
+    for (var i = 0; i < 6; i++) s += A.charAt(r[i] % A.length);
+    return s;
+  }
+  // Username namespacing: prepend the teacher's stable tag so logins are
+  // globally unique across teachers. The student types the full handle (it
+  // appears on their card). The DB unique constraint remains the hard backstop.
+  function teacherTag() { try { return GA.cloud.teacherTag ? GA.cloud.teacherTag() : null; } catch (_) { return null; } }
+  function nsUsername(handle) { var t = teacherTag(); return t ? (t + "-" + handle) : handle; }
+  function stripNs(full) { var t = teacherTag(); full = String(full || ""); return (t && full.indexOf(t + "-") === 0) ? full.slice(t.length + 1) : full; }
+
+  GA._genCode = function () { if (el("csCode")) { el("csCode").value = genCode(); el("csCode").focus(); } };
+
+  GA._lastIssued = [];
+  GA._importRoster = async function () {
+    if (!GA.cloud.enabled()) return;
+    var raw = (el("csImport") && el("csImport").value) || "";
+    var prefix = ((el("csImpPrefix") && el("csImpPrefix").value) || "").trim();
+    var statusEl = el("csImpStatus"), resEl = el("csImpResults");
+    function status(m, kind) { if (statusEl) { statusEl.textContent = m; statusEl.style.color = kind === "err" ? "var(--error)" : kind === "warn" ? "var(--warn)" : kind === "ok" ? "var(--success)" : "var(--muted)"; } }
+    var lines = raw.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    if (!lines.length) return status("Paste at least one student number.", "err");
+    status("Importing 0 of " + lines.length + "\u2026");
+    var issued = [], failed = [];
+    for (var i = 0; i < lines.length; i++) {
+      var parts = lines[i].split(",").map(function (x) { return x.trim(); });
+      var num = parts[0], code = parts[1] || genCode(), handle = parts[2] || ((prefix ? prefix + "-" : "") + num), user = nsUsername(handle);
+      if (!/^\d{2,}$/.test(num)) { failed.push({ num: lines[i], reason: "not a number" }); continue; }
+      if (code.length < 4) { failed.push({ num: num, reason: "code too short" }); continue; }
+      var r = await GA.cloud.teacherUpsertStudent(user, num, code);
+      status("Importing " + (i + 1) + " of " + lines.length + "\u2026");
+      if (r && r.ok) issued.push({ num: num, user: user, code: code });
+      else failed.push({ num: num, reason: (r && r.error) ? (/auth/i.test(r.error) ? "sign in with email/password" : r.error) : "failed" });
+    }
+    status("Issued " + issued.length + " login" + (issued.length === 1 ? "" : "s") + (failed.length ? (", " + failed.length + " skipped") : "") + ".", failed.length ? "warn" : "ok");
+    GA._lastIssued = issued;
+    var html = "";
+    if (issued.length) {
+      html += '<p style="font-family:var(--sans-ui);font-size:.78rem;color:var(--warn);margin:10px 0 4px"><strong>Save or print these now</strong> \u2014 codes are stored encrypted and cannot be shown again (only reset).</p>' +
+        '<div class="card" style="padding:0;overflow:auto;margin:0"><table class="student-list"><tr><th>Student #</th><th>Username</th><th>Code</th></tr>' +
+        issued.map(function (x) { return '<tr><td><strong>' + esc(x.num) + '</strong></td><td>' + esc(x.user) + '</td><td><code>' + esc(x.code) + '</code></td></tr>'; }).join("") +
+        '</table></div><div style="margin-top:8px"><button class="btn ghost small" onclick="GA._copyCreds()">Copy as text</button> <button class="btn ghost small" onclick="GA._printCreds()">Print</button></div>';
+    }
+    if (failed.length) html += '<p style="font-family:var(--sans-ui);font-size:.76rem;color:var(--muted);margin-top:10px">Skipped: ' + failed.map(function (f) { return esc(f.num) + " (" + esc(f.reason) + ")"; }).join(", ") + '</p>';
+    if (resEl) resEl.innerHTML = html;
+    GA._loadCloudRoster();
+  };
+
+  GA._copyCreds = function () {
+    var iss = GA._lastIssued || [];
+    var text = "Student #\tUsername\tCode\n" + iss.map(function (x) { return x.num + "\t" + x.user + "\t" + x.code; }).join("\n");
+    try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text); else throw 0; }
+    catch (_) { window.prompt("Copy these credentials:", text); }
+  };
+  GA._printCreds = function () {
+    var iss = GA._lastIssued || []; if (!iss.length) return;
+    var rows = iss.map(function (x) { return '<tr><td>' + esc(x.num) + '</td><td>' + esc(x.user) + '</td><td>' + esc(x.code) + '</td></tr>'; }).join("");
+    var w; try { w = window.open("", "_blank"); } catch (_) { w = null; }
+    if (!w) return;
+    w.document.write('<html><head><title>Class logins</title><style>body{font-family:Georgia,serif;padding:24px;color:#15192a}table{border-collapse:collapse;width:100%;margin-top:12px}th,td{border:1px solid #ccc;padding:8px;text-align:left}h1{font-size:18px}code{font-family:monospace}</style></head><body><h1>Class logins</h1><p>Keep this secure. Codes cannot be retrieved later \u2014 only reset.</p><table><tr><th>Student #</th><th>Username</th><th>Code</th></tr>' + rows + '</table></body></html>');
+    w.document.close(); try { w.focus(); w.print(); } catch (_) {}
+  };
+
+  GA._addStudent = async function () {
+    var u = (el("csUser") && el("csUser").value || "").trim();
+    var n = (el("csNum") && el("csNum").value || "").trim();
+    var c = (el("csCode") && el("csCode").value || "").trim();
+    var errEl = el("csErr");
+    function say(m, ok) { if (errEl) { errEl.textContent = m; errEl.style.color = ok ? "var(--success)" : "var(--error)"; } }
+    if (!u) return say("Enter a username for the student to log in with.");
+    if (!/^\d{2,}$/.test(n)) return say("Enter the student number (digits only).");
+    if (c.length < 4) return say("Choose a login code of at least 4 characters.");
+    say("Saving\u2026", true);
+    var r = await GA.cloud.teacherUpsertStudent(nsUsername(u), n, c);
+    if (!r) return say("Cloud is off \u2014 students can't be issued logins in the offline build.");
+    if (!r.ok) {
+      if (/auth/i.test(r.error || "")) return say("Please sign in with your teacher email and password (not the access code) to manage class accounts.");
+      return say(r.error || "Couldn't save that login.");
+    }
+    say("Saved. The student can now sign in with that username and code.", true);
+    if (el("csCode")) el("csCode").value = "";
+    GA._loadCloudRoster();
+  };
+
+  GA._prefillStudent = function (u, n) {
+    if (el("csUser")) el("csUser").value = stripNs(u);
+    if (el("csNum")) el("csNum").value = n;
+    if (el("csCode")) { el("csCode").value = ""; el("csCode").focus(); }
+    if (el("csErr")) { el("csErr").textContent = "Enter a new login code, then Issue / update."; el("csErr").style.color = "var(--muted)"; }
+  };
+
+  GA._loadCloudRoster = async function () {
+    var box = el("ga-cloud-roster"); if (!box) return;
+    if (!GA.cloud.enabled()) { box.innerHTML = ""; return; }
+    box.innerHTML = '<p style="color:var(--muted);padding:6px 0">Loading class accounts\u2026</p>';
+    var r = await GA.cloud.teacherListStudents();
+    if (!r) { box.innerHTML = ""; return; }
+    if (!r.ok) {
+      var m = /auth/i.test(r.error || "") ? "Sign in with your teacher email and password to see and manage class accounts." : (r.error || "Couldn't load accounts.");
+      box.innerHTML = '<p style="color:var(--muted);padding:6px 0">' + esc(m) + '</p>'; return;
+    }
+    if (!r.rows.length) { box.innerHTML = '<p style="color:var(--muted);font-style:italic;padding:6px 0">No student logins issued yet. Add one above.</p>'; return; }
+    var rows = r.rows.map(function (s) {
+      var num = String(s.student_number), user = String(s.username);
+      return '<tr><td><strong>' + esc(num) + '</strong></td><td>' + esc(user) + '</td>' +
+        '<td><button class="btn ghost small" onclick="GA._prefillStudent(' + JSON.stringify(user) + ',' + JSON.stringify(num) + ')">Reset code</button></td></tr>';
+    }).join("");
+    box.innerHTML = '<div class="card" style="padding:0;overflow:auto;margin:0"><table class="student-list">' +
+      '<tr><th>Student #</th><th>Username</th><th></th></tr>' + rows + '</table></div>';
+  };
   GA._teacherLogout = function () { try { GA.cloud.teacherSignOut(); GA.cloud.clearStudent(); } catch (_) {} teacher.authed = false; teacher.term = teacher.grade = teacher.stream = null; GA._authTab = "login"; GA.go("#entrance"); };
   GA._editNote = function (num) {
     var cur = TeacherNotes.get(TID, num);
@@ -3166,6 +3320,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     var client = null, ready = false, tried = false;
     var stu = { username: null, code: null };   // in-memory student secret
     var queue = [];                               // pending progress pushes
+    var uid = null;                               // current teacher auth uid (for username namespacing)
 
     function init() {
       if (tried) return ready;
@@ -3181,10 +3336,21 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     }
     function online() { return ready && (typeof navigator === "undefined" || navigator.onLine !== false); }
     function offlineErr() { return { ok: false, error: "Can't reach the server right now — please check your connection and try again." }; }
+    // Stable short tag derived from the teacher's globally-unique auth uid.
+    // Used to namespace student usernames so two teachers can never collide.
+    function tagFromUid(id) {
+      if (!id) return null;
+      var h = 5381; for (var i = 0; i < id.length; i++) h = ((h * 33) ^ id.charCodeAt(i)) >>> 0;
+      var A = "0123456789abcdefghjkmnpqrstvwxyz", s = ""; // Crockford base32 (no i,l,o,u)
+      for (var j = 0; j < 6; j++) { s = A.charAt(h % 32) + s; h = Math.floor(h / 32); }
+      return s;
+    }
 
     return {
       enabled: function () { return init(); },
       online: online,
+      teacherUid: function () { return uid; },
+      teacherTag: function () { return tagFromUid(uid); },
 
       /* ---- teacher auth (Supabase Auth) ---- */
       teacherSignUp: async function (email, password, meta) {
@@ -3201,6 +3367,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
         try {
           var r = await client.auth.signInWithPassword({ email: email, password: password });
           if (r.error) return { ok: false, error: r.error.message };
+          uid = (r.data && r.data.user && r.data.user.id) || uid;
           var prof = null;
           try {
             var pr = await client.from("teachers").select("name,school,emirate").eq("id", r.data.user.id).single();
@@ -3209,10 +3376,15 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
           return { ok: true, profile: prof || {} };
         } catch (_) { return offlineErr(); }
       },
-      teacherSignOut: async function () { if (init()) { try { await client.auth.signOut(); } catch (_) {} } },
+      teacherSignOut: async function () { uid = null; if (init()) { try { await client.auth.signOut(); } catch (_) {} } },
       getSession: async function () {
         if (!init()) return null;
-        try { var r = await client.auth.getSession(); return (r && r.data && r.data.session) ? r.data.session : null; }
+        try {
+          var r = await client.auth.getSession();
+          var sess = (r && r.data && r.data.session) ? r.data.session : null;
+          if (sess && sess.user && sess.user.id) uid = sess.user.id;
+          return sess;
+        }
         catch (_) { return null; }
       },
       forgotPassword: async function (email) {
@@ -3263,30 +3435,73 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
           if (r.error) return { ok: false, error: r.error.message };
           return r.data;
         } catch (_) { return offlineErr(); }
+      },
+      teacherListStudents: async function () {
+        if (!init()) return null;
+        try {
+          var r = await client.from("students").select("username,student_number,created_at").order("student_number");
+          if (r.error) return { ok: false, error: r.error.message };
+          return { ok: true, rows: r.data || [] };
+        } catch (_) { return offlineErr(); }
+      },
+      teacherPullAllProgress: async function () {
+        if (!init()) return null;
+        try {
+          var r = await client.from("progress").select("term,lesson_id,practice,official,updated_at,students(student_number)");
+          if (r.error) return { ok: false, error: r.error.message };
+          var rows = (r.data || []).map(function (x) {
+            return { number: x.students && x.students.student_number, term: x.term, lesson_id: x.lesson_id, practice: x.practice, official: x.official, updated_at: x.updated_at };
+          }).filter(function (x) { return x.number; });
+          return { ok: true, rows: rows };
+        } catch (_) { return offlineErr(); }
       }
     };
   })();
 
   // Pull cloud progress for the current student and merge into local store
   // (last-write-wins at the lesson-cell level). No-op when cloud is off.
+  // Merge one cloud cell into local store (last-write-wins). Returns true if it changed local.
+  function mergeCloudCell(num, term, lid, practice, official, updatedAt) {
+    var lp = lessonProgress(num, term, lid);
+    var localT = Math.max(
+      (lp.rec.practice && lp.rec.practice.lastAt) || 0,
+      (lp.rec.official && lp.rec.official.at) || 0
+    );
+    var cloudT = Date.parse(updatedAt) || 0;
+    if (cloudT > localT) {
+      if (practice) lp.rec.practice = practice;
+      if (official) lp.rec.official = official;
+      store.save(lp.d);
+      return true;
+    }
+    return false;
+  }
+
   GA._pullCloudProgress = async function () {
     if (!GA.cloud.enabled() || !session.num) return;
     var res = await GA.cloud.studentPull();
     if (!res || !res.ok || !Array.isArray(res.rows)) return;
     var num = session.num;
     res.rows.forEach(function (row) {
-      var lp = lessonProgress(num, row.term, row.lesson_id);
-      var localT = Math.max(
-        (lp.rec.practice && lp.rec.practice.lastAt) || 0,
-        (lp.rec.official && lp.rec.official.at) || 0
-      );
-      var cloudT = Date.parse(row.updated_at) || 0;
-      if (cloudT > localT) {
-        if (row.practice) lp.rec.practice = row.practice;
-        if (row.official) lp.rec.official = row.official;
-        store.save(lp.d);
-      }
+      mergeCloudCell(num, row.term, row.lesson_id, row.practice, row.official, row.updated_at);
     });
+  };
+
+  // Teacher dashboard: pull EVERY student's progress for this class into the
+  // local store so the roster reflects students who only worked elsewhere.
+  GA._classSyncBusy = false; GA._lastClassSync = 0;
+  GA._syncClassProgress = async function () {
+    if (!GA.cloud.enabled() || GA._classSyncBusy) return;
+    GA._classSyncBusy = true;
+    var r = await GA.cloud.teacherPullAllProgress();
+    GA._classSyncBusy = false;
+    if (!r || !r.ok || !Array.isArray(r.rows)) return;
+    r.rows.forEach(function (row) {
+      if (!row.number) return;
+      mergeCloudCell(String(row.number), row.term, row.lesson_id, row.practice, row.official, row.updated_at);
+    });
+    GA._lastClassSync = Date.now();
+    if ((location.hash || "").indexOf("teacher") >= 0) render();  // refresh the table
   };
 
   // Retry any queued pushes when connectivity returns.
@@ -3562,7 +3777,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     if (h === "access-teacher") { setEntryMode(true); el("view").innerHTML = Views.teacherAccess(); paintNav(); setTimeout(function () { GA._focus(GA._authTab === "signup" ? "tsName" : (GA._authTab === "forgot" ? "tfEmail" : "tlEmail")); }, 30); return; }
     setEntryMode(false);
     // teacher dashboard + peek are always reachable (auth handled inside the views)
-    if (h === "teacher") { el("view").innerHTML = Views.teacher(); paintNav(); return; }
+    if (h === "teacher") { el("view").innerHTML = Views.teacher(); paintNav(); if (GA._loadCloudRoster) GA._loadCloudRoster(); if (GA.cloud.enabled() && !GA._classSyncedOnce) { GA._classSyncedOnce = true; GA._syncClassProgress(); } return; }
     if (h === "teacher-peek") { el("view").innerHTML = Views.teacherPeek(); paintNav(); return; }
     if (h === "report") { el("view").innerHTML = Views.report(); paintNav(); return; }
     if (h === "reports-batch") { el("view").innerHTML = Views.reportsBatch(); paintNav(); return; }
