@@ -2300,7 +2300,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
           var o = prog[term][lid].official;
           if (o && o.submitted) {
             var L = GA.registry.lessons[lid];
-            subRows.push('<tr><td>' + esc(num) + '</td><td>' + esc(GA.registry.terms[term] ? GA.registry.terms[term].label : term) + '</td><td>' + esc(L ? L.title : lid) + '</td><td>' + o.correct + '/' + o.total + ' (' + o.pct + '%)</td><td>' + fmtDate(o.at) + '</td></tr>');
+            subRows.push('<tr><td>' + studentTag(num) + '</td><td>' + esc(GA.registry.terms[term] ? GA.registry.terms[term].label : term) + '</td><td>' + esc(L ? L.title : lid) + '</td><td>' + o.correct + '/' + o.total + ' (' + o.pct + '%)</td><td>' + fmtDate(o.at) + '</td></tr>');
           }
         });
       });
@@ -2311,7 +2311,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<p class="section-sub">Proof the foundation holds: modules registered, validator status, and the one-submission lock recording final scores.</p>' +
       valid +
       '<h3 style="margin:24px 0 10px">Registered modules</h3><div class="card" style="padding:0;overflow:auto"><table class="peek"><tr><th>Term</th><th>Stream</th><th>CEFR</th><th>Lessons</th></tr>' + mods + '</table></div>' +
-      '<h3 style="margin:28px 0 10px">Official submissions (locked)</h3><div class="card" style="padding:0;overflow:auto"><table class="peek"><tr><th>Student #</th><th>Term</th><th>Lesson</th><th>Score</th><th>Submitted</th></tr>' + subs + '</table></div>' +
+      '<h3 style="margin:28px 0 10px">Official submissions (locked)</h3><div class="card" style="padding:0;overflow:auto"><table class="peek"><tr><th>Student</th><th>Term</th><th>Lesson</th><th>Score</th><th>Submitted</th></tr>' + subs + '</table></div>' +
       '<div style="margin-top:24px"><button class="btn ghost small" onclick="GA.go(\'#teacher\')">← Teacher dashboard</button> <button class="btn ghost small" onclick="GA.go(\'#home\')">Back to academy</button></div></div>';
   };
 
@@ -2579,6 +2579,93 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
   }
 
   // Class accounts card — issue/update student logins (cloud only).
+  // ---- Teacher analytics helpers (name-linked; private labels stay local) ----
+  function studentNameOf(num) { return TeacherNotes.get(TID, num) || ""; }
+  function studentTag(num) {
+    var nm = studentNameOf(num);
+    return nm ? (esc(nm) + ' <span style="color:var(--muted);font-size:.78em">#' + esc(num) + '</span>') : ('<span>#' + esc(num) + '</span>');
+  }
+  function bandClass(pct) { return pct == null ? "untouched" : (pct < 60 ? "weak" : (pct < 80 ? "fair" : "strong")); }
+
+  var PW_ANALYTICS_STYLE = '<style>' +
+    '.matrix{border-collapse:collapse;width:100%;font-family:var(--sans-ui);font-size:.78rem}' +
+    '.matrix th,.matrix td{border:1px solid var(--line);padding:6px 9px;text-align:center;white-space:nowrap}' +
+    '.matrix th{background:var(--navy-50);color:var(--navy-700);font-size:.66rem;text-transform:uppercase;letter-spacing:.5px}' +
+    '.m-mini.weak{background:#fcecec;color:var(--error)}' +
+    '.m-mini.fair{background:#fbf0d7;color:var(--warn)}' +
+    '.m-mini.strong{background:#e8f2ec;color:var(--success)}' +
+    '.m-mini.untouched{color:var(--muted)}' +
+    '</style>';
+
+  function pathwaySubmissions(term, lessonIds) {
+    var d = store.load(), set = {}, out = [];
+    lessonIds.forEach(function (l) { set[l] = 1; });
+    Object.keys(d.students || {}).forEach(function (num) {
+      var prog = (d.students[num].progress && d.students[num].progress[term]) || {};
+      Object.keys(prog).forEach(function (lid) {
+        if (!set[lid]) return;
+        var o = prog[lid].official;
+        if (o && o.submitted) out.push({ num: num, lid: lid, pct: o.pct, correct: o.correct, total: o.total, at: o.at });
+      });
+    });
+    return out.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+  }
+
+  function submissionsCard(term, lessonIds) {
+    var subs = pathwaySubmissions(term, lessonIds);
+    var rows = subs.length ? subs.map(function (s) {
+      var L = GA.registry.lessons[s.lid];
+      return '<tr><td>' + studentTag(s.num) + '</td><td>' + esc(L ? L.title : s.lid) + '</td><td class="m-mini ' + bandClass(s.pct) + '">' + s.correct + '/' + s.total + ' (' + s.pct + '%)</td><td>' + fmtDate(s.at) + '</td></tr>';
+    }).join("") : '<tr><td colspan="4" class="empty" style="padding:24px">No official submissions in this pathway yet.</td></tr>';
+    return '<h3 style="margin:6px 0 10px">Official submissions <span style="color:var(--muted);font-weight:normal">(' + subs.length + ')</span></h3>' +
+      '<div class="card" style="padding:0;overflow:auto"><table class="student-list"><tr><th>Student</th><th>Lesson</th><th>Score</th><th>Submitted</th></tr>' + rows + '</table></div>';
+  }
+
+  function classProgressCard(roster, lessonIds) {
+    var n = roster.length;
+    var classAvg = n ? Math.round(roster.reduce(function (a, r) { return a + (r.model.avg || 0); }, 0) / n) : 0;
+    var subCount = 0, mastered = 0;
+    roster.forEach(function (r) { if (r.model.pathwayMaster) mastered++; lessonIds.forEach(function (lid) { var sc = r.model.scores[lid]; if (sc && sc.official) subCount++; }); });
+    var stats = '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px">' +
+      statCard("Active students", n, "in this pathway") +
+      statCard("Class average", classAvg + "%", "across attempted lessons") +
+      statCard("Official submissions", subCount, "locked mastery tests") +
+      statCard("Pathway mastered", mastered + " / " + n, "all lessons \u2265 50%") + '</div>';
+    if (!n) return '<h3 style="margin:26px 0 10px">Whole-class progress</h3>' + stats + '<p style="color:var(--muted);font-style:italic">No student activity in this pathway yet.</p>';
+    var lessonObjs = lessonIds.map(function (l) { return GA.registry.lessons[l]; });
+    var header = '<th style="text-align:left">Student</th>' + lessonObjs.map(function (L, i) { return '<th title="' + esc(L ? L.title : "") + '">' + (L && L.code ? esc(L.code) : ("L" + (i + 1))) + '</th>'; }).join("") + '<th>Avg</th>';
+    var colSum = lessonIds.map(function () { return []; });
+    var body = roster.map(function (r) {
+      var cells = lessonIds.map(function (lid, ci) {
+        var sc = r.model.scores[lid];
+        if (sc) { colSum[ci].push(sc.pct); return '<td class="m-mini ' + bandClass(sc.pct) + '">' + sc.pct + '%</td>'; }
+        return '<td class="m-mini untouched">\u2014</td>';
+      }).join("");
+      return '<tr><td style="text-align:left">' + studentTag(r.num) + '</td>' + cells + '<td class="m-mini ' + bandClass(r.model.avg) + '"><strong>' + (r.model.avg || 0) + '%</strong></td></tr>';
+    }).join("");
+    var footer = '<tr><td style="text-align:left;color:var(--muted)">Class avg</td>' + colSum.map(function (arr) {
+      var a = arr.length ? Math.round(arr.reduce(function (x, y) { return x + y; }, 0) / arr.length) : null;
+      return '<td class="m-mini ' + bandClass(a) + '">' + (a == null ? "\u2014" : a + "%") + '</td>';
+    }).join("") + '<td class="m-mini ' + bandClass(classAvg) + '"><strong>' + classAvg + '%</strong></td></tr>';
+    return '<h3 style="margin:26px 0 10px">Whole-class progress</h3>' + stats +
+      '<div class="card" style="padding:0;overflow:auto"><table class="matrix"><tr>' + header + '</tr>' + body + footer + '</table></div>';
+  }
+
+  function byLessonCard(roster, lessonIds) {
+    var rows = lessonIds.map(function (lid) {
+      var L = GA.registry.lessons[lid], pcts = [], official = 0, weak = 0, mastered = 0, attempted = 0;
+      roster.forEach(function (r) { var sc = r.model.scores[lid]; if (sc) { attempted++; pcts.push(sc.pct); if (sc.official) official++; if (sc.pct < 60) weak++; if (sc.pct >= 80) mastered++; } });
+      var avg = pcts.length ? Math.round(pcts.reduce(function (a, b) { return a + b; }, 0) / pcts.length) : null;
+      return '<tr><td style="text-align:left">' + (L && L.code ? '<span style="color:var(--muted);font-size:.72rem">' + esc(L.code) + '</span> ' : "") + esc(L ? L.title : lid) + '</td>' +
+        '<td>' + attempted + '</td><td>' + official + '</td>' +
+        '<td class="m-mini ' + bandClass(avg) + '">' + (avg == null ? "\u2014" : avg + "%") + '</td>' +
+        '<td>' + (weak ? '<span style="color:var(--error)">' + weak + '</span>' : "0") + '</td>' +
+        '<td>' + (mastered ? '<span style="color:var(--success)">' + mastered + '</span>' : "0") + '</td></tr>';
+    }).join("");
+    return '<h3 style="margin:26px 0 10px">Progress by lesson</h3><div class="card" style="padding:0;overflow:auto"><table class="matrix">' +
+      '<tr><th style="text-align:left">Lesson</th><th>Attempted</th><th>Submitted</th><th>Class avg</th><th>Weak &lt;60</th><th>Mastered \u226580</th></tr>' + rows + '</table></div>';
+  }
+
   function cloudAccountsCard() {
     var tag = teacherTag();
     var userField = tag
@@ -2700,7 +2787,11 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       : '<p style="color:var(--muted);font-style:italic;padding:8px 0">No intervention groups yet — they appear when 2+ students share a weak lesson or grammar family.</p>';
     var intervCard = '<h3 style="margin:28px 0 10px">Suggested intervention groups</h3><div class="card">' + interv + '</div>';
 
-    return head + rosterCard + intervCard + '</div>';
+    return head + PW_ANALYTICS_STYLE +
+      submissionsCard(teacher.term, allLessons) +
+      classProgressCard(roster, allLessons) +
+      byLessonCard(roster, allLessons) +
+      rosterCard + intervCard + '</div>';
   };
 
   GA._teacherAuth = function () {
