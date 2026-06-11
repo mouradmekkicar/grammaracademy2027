@@ -3595,10 +3595,11 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       teacherSignUp: async function (email, password, meta) {
         if (!init()) return null;
         try {
-          var r = await client.auth.signUp({ email: email, password: password, options: { data: meta || {} } });
+          // Privacy (MoE): no name/school/emirate is ever sent to the cloud.
+          var r = await client.auth.signUp({ email: email, password: password });
           if (r.error) return { ok: false, error: r.error.message };
           var hasSession = !!(r.data && r.data.session);
-          return { ok: true, profile: meta || {}, needsConfirm: !hasSession };
+          return { ok: true, profile: {}, needsConfirm: !hasSession };
         } catch (_) { return offlineErr(); }
       },
       teacherSignIn: async function (email, password) {
@@ -3609,8 +3610,9 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
           uid = (r.data && r.data.user && r.data.user.id) || uid;
           var prof = null;
           try {
-            var pr = await client.from("teachers").select("name,school,emirate").eq("id", r.data.user.id).single();
-            if (!pr.error) prof = pr.data;
+            // Confirm the teacher row exists; name/school live on-device only, never read from cloud.
+            var pr = await client.from("teachers").select("id").eq("id", r.data.user.id).single();
+            if (!pr.error) prof = {};
           } catch (_) {}
           return { ok: true, profile: prof || {} };
         } catch (_) { return offlineErr(); }
@@ -3986,7 +3988,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     if (!p.emirate) return setAuthErr("tErr", "Please select your emirate.");
     if (p.password.length < 4) return setAuthErr("tErr", "Please choose a password of at least 4 characters.");
     if (p.password !== p.password2) return setAuthErr("tErr", "The two passwords do not match.");
-    var r = await GA.cloud.teacherSignUp(p.email, p.password, { name: p.name, school: p.school, emirate: p.emirate });
+    var r = await GA.cloud.teacherSignUp(p.email, p.password);  // name/school/emirate stay on this device only
     if (r == null) r = GA.auth.handleTeacherSignup(p);   // offline / unconfigured fallback
     if (!r.ok) { setAuthErr("tErr", r.error); try { if (GA.fx) GA.fx.play("warn"); } catch (_) {} return; }
     if (r.needsConfirm) {   // cloud requires email confirmation before a session exists
