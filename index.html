@@ -2786,7 +2786,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
         '<h1 style="margin-top:10px">' + esc(L.title) + '</h1><p class="section-sub" style="margin-bottom:0">' + esc(L.chapter) + ' \u00b7 ' + esc(L.week) + '</p></div></div>' +
         '<h3 style="margin:18px 0 8px">Learn the rule</h3>' + prevLearnHtml(L) +
         '<h3 style="margin:26px 0 4px">Question bank \u00b7 answer key</h3>' + toggle + prevBankHtml(L) +
-        '<div style="margin-top:18px"><button class="btn ghost small" onclick="GA._prevBackToList()">\u2190 Lesson list</button> <button class="btn ghost small" onclick="GA._printThisLesson(\'' + GA._prevLid + '\')">Print worksheet</button></div></div>';
+        '<div style="margin-top:18px"><button class="btn ghost small" onclick="GA._prevBackToList()">\u2190 Lesson list</button> <button class="btn ghost small" onclick="GA._prevPrint()">Print worksheet</button></div></div>';
     }
 
     // Level 2 — lessons in the chosen academy
@@ -2984,6 +2984,11 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
   GA._prevSetBank = function (b) { GA._prevBank = (b === "official") ? "official" : "practice"; render(); };
   GA._prevBackToList = function () { GA._prevLid = null; render(); try { window.scrollTo(0, 0); } catch (_) {} };
   GA._prevBackToPaths = function () { GA._prevPw = null; GA._prevLid = null; render(); };
+  GA._prevPrint = function () {
+    var pw = GA.registry.pathways[GA._prevPw]; if (!pw) return;
+    GA._printCtx = { term: pw.term, grade: pw.grade, stream: pw.stream, preLid: GA._prevLid, fromTeacher: true, fromPreview: true };
+    GA.go("#print-picker");
+  };
 
   // ---- Class accounts (cloud student logins) ----
   // Easy-to-read code: 6 chars, no ambiguous glyphs (no I/L/O/0/1).
@@ -3567,7 +3572,9 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       var pre = ctx.preLid ? (ctx.preLid === x.lid) : true;
       return '<label style="display:flex;align-items:center;gap:10px;padding:7px 10px;border-bottom:1px solid var(--line)"><input type="checkbox" class="lp-pick" value="' + x.lid + '"' + (pre ? " checked" : "") + '><span class="tag code">' + esc(L.code) + '</span><span>' + esc(L.title) + '</span></label>';
     }).join("");
-    var back = ctx.fromTeacher ? '<button class="btn ghost small" onclick="GA.go(\'#teacher\')">← Dashboard</button>' : '<button class="btn ghost small" onclick="GA._openLesson(\'' + (ctx.preLid || "") + '\')">← Lesson</button>';
+    var back = ctx.fromPreview ? '<button class="btn ghost small" onclick="GA.go(\'#preview\')">\u2190 Back to lesson</button>'
+      : ctx.fromTeacher ? '<button class="btn ghost small" onclick="GA.go(\'#teacher\')">\u2190 Dashboard</button>'
+      : '<button class="btn ghost small" onclick="GA._openLesson(\'' + (ctx.preLid || "") + '\')">\u2190 Lesson</button>';
     return '<div class="page narrow"><div class="eyebrow">' + esc(pw.streamLabel) + '</div><h1>Print worksheets</h1>' +
       '<p class="section-sub">Each lesson prints as a branded A4 worksheet. Choose what to include, then print or save as PDF.</p>' +
       '<div class="card" style="margin-bottom:18px"><div style="display:flex;flex-direction:column;gap:10px">' +
