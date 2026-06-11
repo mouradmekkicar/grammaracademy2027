@@ -2488,6 +2488,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     function _write(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (_) {} }
     return {
       get: function (t, s) { if (!t || !s) return ""; var a = _read(); return (a[t] && a[t][s]) || ""; },
+      all: function (t) { var a = _read(); return (t && a[t]) ? a[t] : {}; },
       set: function (t, s, label) {
         if (!t || !s) return; var a = _read(); if (!a[t]) a[t] = {};
         var v = String(label || "").trim().slice(0, MAX);
@@ -2598,13 +2599,14 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
         '<div id="ga-cloud-roster" style="margin-top:14px"></div>' +
         '<details style="margin-top:16px"><summary style="cursor:pointer;font-family:var(--sans-ui);font-size:.82rem;color:var(--navy-700);font-weight:600">Import a whole class</summary>' +
           '<div style="margin-top:12px">' +
-            '<p class="section-sub" style="margin-top:0">Paste one student number per line. A code is generated for each unless you add one as <code>number, code</code>.' +
+            '<p class="section-sub" style="margin-top:0">Load a text file (or paste) with one student <strong>per line</strong> &mdash; you can use <strong>names or numbers</strong>. For a name, a number is assigned automatically and the name is kept privately on this device (never sent to the cloud). A login code is generated for each.' +
             (tag ? ' Usernames are auto-prefixed with your class tag <code>' + esc(tag) + '-</code>.' : '') + ' The optional prefix below is just for your own grouping (e.g. <em>9A</em>).</p>' +
-            '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:10px">' +
-              '<div><label class="fld" for="csImpPrefix">Group prefix (optional)</label><input class="txt" id="csImpPrefix" autocomplete="off" placeholder="e.g. 9A" style="max-width:160px"></div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:10px">' +
+              '<div><label class="fld" for="csImpFile">Load from file (.txt / .csv)</label><input type="file" id="csImpFile" accept=".txt,.csv,text/plain" onchange="GA._importFile(this)" style="font-family:var(--sans-ui);font-size:.82rem;padding:7px 0"></div>' +
+              '<div><label class="fld" for="csImpPrefix">Group prefix (optional)</label><input class="txt" id="csImpPrefix" autocomplete="off" placeholder="e.g. 9A" style="max-width:140px"></div>' +
             '</div>' +
-            '<textarea class="txt" id="csImport" rows="5" placeholder="90412&#10;90413&#10;90414, custom-code&#10;90415" style="width:100%;font-family:var(--sans-ui)"></textarea>' +
-            '<div style="margin-top:10px"><button class="btn gold" onclick="GA._importRoster()">Import &amp; issue logins</button></div>' +
+            '<textarea class="txt" id="csImport" rows="5" placeholder="Ali El Yakine&#10;Mohamed El Kho&#10;Sara Nasser, 90413&#10;90412" style="width:100%;font-family:var(--sans-ui)"></textarea>' +
+            '<div style="margin-top:10px"><button class="btn gold" onclick="GA._importRoster()">Issue logins for the whole class</button></div>' +
             '<p id="csImpStatus" style="font-family:var(--sans-ui);font-size:.8rem;margin:10px 0 0;min-height:1em"></p>' +
             '<div id="csImpResults" style="margin-top:6px"></div>' +
           '</div>' +
@@ -2616,19 +2618,47 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     if (!teacher.authed) return teacherAuthGate("");
 
     // pathway picker
-    var pwBlocks = Object.keys(GA.registry.pathways).map(function (k) { return GA.registry.pathways[k]; })
-      .sort(function (a, b) { return (a.term + a.grade + a.stream).localeCompare(b.term + b.grade + b.stream); })
-      .map(function (p) {
+    var byTerm = {};
+    Object.keys(GA.registry.pathways).forEach(function (k) {
+      var p = GA.registry.pathways[k];
+      (byTerm[p.term] = byTerm[p.term] || { label: p.termLabel || p.term, items: [] }).items.push(p);
+    });
+    function gradeRank(p) { return (parseInt(p.grade, 10) || 0) * 10 + (p.stream === "advanced" ? 1 : 0); }
+    var GRADE_COLOR = {
+      "9":  { a: "#1f9d77", t: "#e9f8f2" },
+      "10": { a: "#2b73c6", t: "#e9f1fb" },
+      "11": { a: "#8a4fb3", t: "#f3ecfa" },
+      "12": { a: "#c98a1e", t: "#fbf2e0" }
+    };
+    var pwStyle = '<style>' +
+      '.pw-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}' +
+      '@media(max-width:900px){.pw-grid{grid-template-columns:repeat(2,1fr)}}' +
+      '@media(max-width:560px){.pw-grid{grid-template-columns:1fr}}' +
+      '.pw-tile{text-align:left;border:1px solid var(--line,#e6e0d4);border-left:5px solid var(--pa,#888);border-radius:11px;padding:12px 14px;background:var(--pt,#fff);cursor:pointer;font-family:var(--sans-ui);transition:transform .12s ease,box-shadow .12s ease}' +
+      '.pw-tile:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(10,37,64,.13)}' +
+      '.pw-tile .g{display:block;font-weight:700;color:var(--navy-800,#0a2540);font-size:.96rem;line-height:1.2}' +
+      '.pw-tile .s{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--pa,#888);margin-top:4px;font-weight:600}' +
+      '.pw-tile.active{outline:2px solid var(--gold,#c9a961);outline-offset:1px;box-shadow:0 4px 14px rgba(201,169,97,.3)}' +
+      '.pw-term{font-family:var(--sans-ui);font-size:.72rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold-700,#a07d22);margin:0 0 9px}' +
+      '</style>';
+    var pwGroups = pwStyle + Object.keys(byTerm).sort().map(function (t) {
+      var grp = byTerm[t];
+      var tiles = grp.items.sort(function (a, b) { return gradeRank(a) - gradeRank(b); }).map(function (p) {
         var active = (teacher.term === p.term && teacher.grade === p.grade && teacher.stream === p.stream);
-        return '<button class="btn ' + (active ? "gold" : "ghost") + ' small" onclick="GA._teacherPick(\'' + p.term + '\',\'' + p.grade + '\',\'' + p.stream + '\')">' + esc(p.streamLabel) + '</button>';
-      }).join(" ");
+        var c = GRADE_COLOR[String(p.grade)] || { a: "#888", t: "#fff" };
+        var stream = /adv/i.test(p.stream) ? "Advanced" : "General";
+        return '<button class="pw-tile' + (active ? " active" : "") + '" style="--pa:' + c.a + ';--pt:' + c.t + '" onclick="GA._teacherPick(\'' + p.term + '\',\'' + p.grade + '\',\'' + p.stream + '\')">' +
+          '<span class="g">Grade ' + esc(p.grade) + '</span><span class="s">' + stream + '</span></button>';
+      }).join("");
+      return '<div style="margin-bottom:18px"><div class="pw-term">' + esc(grp.label) + '</div><div class="pw-grid">' + tiles + '</div></div>';
+    }).join("");
 
     var head = '<div class="page">' +
       '<div class="t-banner">' + imgSlot("teacher-dashboard-banner.webp", "Teacher dashboard banner artwork", "", "Teacher banner") +
       '<div class="tb-text"><div class="eyebrow">Teacher area</div><h1>Class dashboard</h1></div></div>' +
       '<p class="section-sub">Private to this device. Students are shown by number — add your own labels to map them to real names.</p>' +
-      '<h3 style="margin:0 0 8px">Classes &amp; pathways</h3>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px">' + pwBlocks + '</div>' +
+      '<h3 style="margin:0 0 12px">Classes &amp; pathways <span style="color:var(--muted);font-weight:normal;font-size:.82rem">— pick one to open its roster</span></h3>' +
+      pwGroups +
       '<div style="margin:8px 0 24px"><button class="btn ghost small sentence" onclick="GA.go(\'#teacher-peek\')">Registry &amp; submissions</button> ' +
       (GA.cloud.enabled() ? '<button class="btn ghost small sentence" onclick="GA._syncClassProgress()">Refresh from cloud</button> ' : '') +
       '<button class="btn ghost small sentence" onclick="GA._teacherLogout()">Sign out</button></div>' +
@@ -2701,6 +2731,16 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
   GA._genCode = function () { if (el("csCode")) { el("csCode").value = genCode(); el("csCode").focus(); } };
 
   GA._lastIssued = [];
+  GA._importFile = function (input) {
+    var f = input && input.files && input.files[0]; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      if (el("csImport")) el("csImport").value = String(rd.result || "").replace(/\r/g, "").trim();
+      if (el("csImpStatus")) { el("csImpStatus").textContent = "Loaded " + f.name + " \u2014 review the list, then issue logins."; el("csImpStatus").style.color = "var(--muted)"; }
+    };
+    rd.onerror = function () { if (el("csImpStatus")) { el("csImpStatus").textContent = "Couldn't read that file."; el("csImpStatus").style.color = "var(--error)"; } };
+    rd.readAsText(f);
+  };
   GA._importRoster = async function () {
     if (!GA.cloud.enabled()) return;
     var raw = (el("csImport") && el("csImport").value) || "";
@@ -2708,45 +2748,82 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     var statusEl = el("csImpStatus"), resEl = el("csImpResults");
     function status(m, kind) { if (statusEl) { statusEl.textContent = m; statusEl.style.color = kind === "err" ? "var(--error)" : kind === "warn" ? "var(--warn)" : kind === "ok" ? "var(--success)" : "var(--muted)"; } }
     var lines = raw.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
-    if (!lines.length) return status("Paste at least one student number.", "err");
-    status("Importing 0 of " + lines.length + "\u2026");
-    var issued = [], failed = [];
+    if (!lines.length) return status("Paste or load at least one student.", "err");
+    status("Preparing\u2026");
+
+    // Build the set of numbers already in use (cloud + local) and a name -> number
+    // map from existing private labels, so names dedupe and numbers never collide.
+    var used = {};
+    try { var lr = await GA.cloud.teacherListStudents(); if (lr && lr.ok) lr.rows.forEach(function (r) { used[String(r.student_number)] = 1; }); } catch (_) {}
+    var ls = (store.load().students) || {}; Object.keys(ls).forEach(function (n) { used[n] = 1; });
+    var labels = TeacherNotes.all(TID), nameToNum = {};
+    Object.keys(labels).forEach(function (n) { nameToNum[String(labels[n]).toLowerCase()] = n; used[n] = 1; });
+    function allocNum() { var n; do { n = String(Math.floor(10000 + Math.random() * 900000)); } while (used[n]); used[n] = 1; return n; }
+
+    var issued = [], failed = [], kept = 0;
     for (var i = 0; i < lines.length; i++) {
       var parts = lines[i].split(",").map(function (x) { return x.trim(); });
-      var num = parts[0], code = parts[1] || genCode(), handle = parts[2] || ((prefix ? prefix + "-" : "") + num), user = nsUsername(handle);
-      if (!/^\d{2,}$/.test(num)) { failed.push({ num: lines[i], reason: "not a number" }); continue; }
-      if (code.length < 4) { failed.push({ num: num, reason: "code too short" }); continue; }
-      var r = await GA.cloud.teacherUpsertStudent(user, num, code);
-      status("Importing " + (i + 1) + " of " + lines.length + "\u2026");
-      if (r && r.ok) issued.push({ num: num, user: user, code: code });
-      else failed.push({ num: num, reason: (r && r.error) ? (/auth/i.test(r.error) ? "sign in with email/password" : r.error) : "failed" });
+      var name = "", num, code, p1 = parts[1] || "", p2 = parts[2] || "";
+      if (/^\d{2,}$/.test(parts[0])) {                 // NUMBER mode: number[, code[, username]]
+        num = parts[0]; code = p1 || genCode();
+        var handle = p2 || ((prefix ? prefix + "-" : "") + num);
+        name = labels[num] || "";
+        var userN = nsUsername(handle);
+        if (code.length < 4) { failed.push({ label: num, reason: "code too short" }); continue; }
+        var rn = await GA.cloud.teacherUpsertStudent(userN, num, code);
+        status("Issuing " + (i + 1) + " of " + lines.length + "\u2026");
+        if (rn && rn.ok) issued.push({ num: num, user: userN, code: code, name: name });
+        else failed.push({ label: num, reason: (rn && rn.error) ? (/auth/i.test(rn.error) ? "sign in with email/password" : rn.error) : "failed" });
+        continue;
+      }
+      // NAME mode: "Name" | "Name, 90412" | "Name, 90412, CODE" | "Name, CODE"
+      name = parts[0];
+      if (!name) { failed.push({ label: lines[i], reason: "empty" }); continue; }
+      if (/^\d{2,}$/.test(p1)) { num = p1; code = p2 || genCode(); }      // explicit number given
+      else {
+        var existed = nameToNum[name.toLowerCase()];
+        if (existed && !p1) { kept++; continue; }                         // already has a login, no new code -> leave it untouched
+        num = existed || allocNum(); code = p1 || genCode();              // auto number (deduped by name)
+      }
+      if (code.length < 4) { failed.push({ label: name, reason: "code too short" }); continue; }
+      var userM = nsUsername((prefix ? prefix + "-" : "") + num);
+      var rm = await GA.cloud.teacherUpsertStudent(userM, num, code);
+      status("Issuing " + (i + 1) + " of " + lines.length + "\u2026");
+      if (rm && rm.ok) {
+        TeacherNotes.set(TID, num, name);              // remember the name locally (never sent to cloud)
+        nameToNum[name.toLowerCase()] = num;
+        issued.push({ num: num, user: userM, code: code, name: name });
+      } else failed.push({ label: name, reason: (rm && rm.error) ? (/auth/i.test(rm.error) ? "sign in with email/password" : rm.error) : "failed" });
     }
-    status("Issued " + issued.length + " login" + (issued.length === 1 ? "" : "s") + (failed.length ? (", " + failed.length + " skipped") : "") + ".", failed.length ? "warn" : "ok");
+
+    status("Issued " + issued.length + " login" + (issued.length === 1 ? "" : "s") +
+      (kept ? (", " + kept + " already had one") : "") +
+      (failed.length ? (", " + failed.length + " skipped") : "") + ".", failed.length ? "warn" : "ok");
     GA._lastIssued = issued;
     var html = "";
     if (issued.length) {
       html += '<p style="font-family:var(--sans-ui);font-size:.78rem;color:var(--warn);margin:10px 0 4px"><strong>Save or print these now</strong> \u2014 codes are stored encrypted and cannot be shown again (only reset).</p>' +
-        '<div class="card" style="padding:0;overflow:auto;margin:0"><table class="student-list"><tr><th>Student #</th><th>Username</th><th>Code</th></tr>' +
-        issued.map(function (x) { return '<tr><td><strong>' + esc(x.num) + '</strong></td><td>' + esc(x.user) + '</td><td><code>' + esc(x.code) + '</code></td></tr>'; }).join("") +
+        '<div class="card" style="padding:0;overflow:auto;margin:0"><table class="student-list"><tr><th>Name</th><th>Student #</th><th>Username</th><th>Code</th></tr>' +
+        issued.map(function (x) { return '<tr><td>' + esc(x.name || "\u2014") + '</td><td><strong>' + esc(x.num) + '</strong></td><td>' + esc(x.user) + '</td><td><code>' + esc(x.code) + '</code></td></tr>'; }).join("") +
         '</table></div><div style="margin-top:8px"><button class="btn ghost small" onclick="GA._copyCreds()">Copy as text</button> <button class="btn ghost small" onclick="GA._printCreds()">Print</button></div>';
     }
-    if (failed.length) html += '<p style="font-family:var(--sans-ui);font-size:.76rem;color:var(--muted);margin-top:10px">Skipped: ' + failed.map(function (f) { return esc(f.num) + " (" + esc(f.reason) + ")"; }).join(", ") + '</p>';
+    if (failed.length) html += '<p style="font-family:var(--sans-ui);font-size:.76rem;color:var(--muted);margin-top:10px">Skipped: ' + failed.map(function (f) { return esc(f.label) + " (" + esc(f.reason) + ")"; }).join(", ") + '</p>';
     if (resEl) resEl.innerHTML = html;
     GA._loadCloudRoster();
   };
 
   GA._copyCreds = function () {
     var iss = GA._lastIssued || [];
-    var text = "Student #\tUsername\tCode\n" + iss.map(function (x) { return x.num + "\t" + x.user + "\t" + x.code; }).join("\n");
+    var text = "Name\tStudent #\tUsername\tCode\n" + iss.map(function (x) { return (x.name || "") + "\t" + x.num + "\t" + x.user + "\t" + x.code; }).join("\n");
     try { if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text); else throw 0; }
     catch (_) { window.prompt("Copy these credentials:", text); }
   };
   GA._printCreds = function () {
     var iss = GA._lastIssued || []; if (!iss.length) return;
-    var rows = iss.map(function (x) { return '<tr><td>' + esc(x.num) + '</td><td>' + esc(x.user) + '</td><td>' + esc(x.code) + '</td></tr>'; }).join("");
+    var rows = iss.map(function (x) { return '<tr><td>' + esc(x.name || "\u2014") + '</td><td>' + esc(x.num) + '</td><td>' + esc(x.user) + '</td><td>' + esc(x.code) + '</td></tr>'; }).join("");
     var w; try { w = window.open("", "_blank"); } catch (_) { w = null; }
     if (!w) return;
-    w.document.write('<html><head><title>Class logins</title><style>body{font-family:Georgia,serif;padding:24px;color:#15192a}table{border-collapse:collapse;width:100%;margin-top:12px}th,td{border:1px solid #ccc;padding:8px;text-align:left}h1{font-size:18px}code{font-family:monospace}</style></head><body><h1>Class logins</h1><p>Keep this secure. Codes cannot be retrieved later \u2014 only reset.</p><table><tr><th>Student #</th><th>Username</th><th>Code</th></tr>' + rows + '</table></body></html>');
+    w.document.write('<html><head><title>Class logins</title><style>body{font-family:Georgia,serif;padding:24px;color:#15192a}table{border-collapse:collapse;width:100%;margin-top:12px}th,td{border:1px solid #ccc;padding:8px;text-align:left}h1{font-size:18px}code{font-family:monospace}</style></head><body><h1>Class logins</h1><p>Keep this secure. Codes cannot be retrieved later \u2014 only reset.</p><table><tr><th>Name</th><th>Student #</th><th>Username</th><th>Code</th></tr>' + rows + '</table></body></html>');
     w.document.close(); try { w.focus(); w.print(); } catch (_) {}
   };
 
@@ -2790,12 +2867,12 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     }
     if (!r.rows.length) { box.innerHTML = '<p style="color:var(--muted);font-style:italic;padding:6px 0">No student logins issued yet. Add one above.</p>'; return; }
     var rows = r.rows.map(function (s) {
-      var num = String(s.student_number), user = String(s.username);
-      return '<tr><td><strong>' + esc(num) + '</strong></td><td>' + esc(user) + '</td>' +
+      var num = String(s.student_number), user = String(s.username), nm = TeacherNotes.get(TID, num);
+      return '<tr><td>' + (nm ? esc(nm) : '<span style="color:var(--muted)">\u2014</span>') + '</td><td><strong>' + esc(num) + '</strong></td><td>' + esc(user) + '</td>' +
         '<td><button class="btn ghost small" onclick="GA._prefillStudent(' + JSON.stringify(user) + ',' + JSON.stringify(num) + ')">Reset code</button></td></tr>';
     }).join("");
     box.innerHTML = '<div class="card" style="padding:0;overflow:auto;margin:0"><table class="student-list">' +
-      '<tr><th>Student #</th><th>Username</th><th></th></tr>' + rows + '</table></div>';
+      '<tr><th>Name</th><th>Student #</th><th>Username</th><th></th></tr>' + rows + '</table></div>';
   };
   GA._teacherLogout = function () { try { GA.cloud.teacherSignOut(); GA.cloud.clearStudent(); } catch (_) {} teacher.authed = false; teacher.term = teacher.grade = teacher.stream = null; GA._authTab = "login"; GA.go("#entrance"); };
   GA._editNote = function (num) {
