@@ -17,6 +17,20 @@
   GA.register = GA.register || function (mod) { GA._queue.push(mod); };
 </script>
 
+<!-- ====================================================================
+     STEP 1b · CLOUD CONFIG  (optional)
+     Leave url/key blank to force pure-offline mode (file:// double-click).
+     The PUBLISHABLE key is safe to ship in client code — access is guarded
+     by the RLS policies in the Supabase backend. Never put the SECRET key here.
+     ==================================================================== -->
+<script>
+  window.GA = window.GA || {};
+  GA.cloudConfig = {
+    url: "https://uvgnfcrcgputvqkheile.supabase.co",
+    key: "sb_publishable_26tFVh37VlbcGK1K1xpPQw_HNmEIAov"
+  };
+</script>
+
 <style>
 :root{
   --navy-900:#0e1b3a; --navy-800:#152447; --navy-700:#1e3260; --navy-600:#2a4478;
@@ -1452,6 +1466,13 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
 <script src="./ga_data_T1_G9_advanced.js"></script>
 
 <!-- ====================================================================
+     STEP 2b · CLOUD CLIENT  (self-hosted UMD build — no CDN)
+     If this file is absent (e.g. offline classroom copy), window.supabase
+     stays undefined and the app runs fully offline. The engine guards on it.
+     ==================================================================== -->
+<script src="./assets/js/supabase.js"></script>
+
+<!-- ====================================================================
      STEP 3 · ENGINE  (the shell; owns all behaviour)
      ==================================================================== -->
 <script>
@@ -2229,6 +2250,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     var prev = lp.rec.practice ? lp.rec.practice.bestPct : 0;
     lp.rec.practice = { bestPct: Math.max(prev, res.pct), lastPct: res.pct, attempts: (lp.rec.practice ? lp.rec.practice.attempts : 0) + 1, lastAt: Date.now() };
     store.save(lp.d);
+    if (GA.cloud && GA.cloud.enabled()) GA.cloud.queueProgress(pick.term, lid, lp.rec.practice, lp.rec.official);
   };
 
   GA._submitOfficial = function (lid) {
@@ -2245,6 +2267,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     // one-submission lock — write immutable record
     lp.rec.official = { submitted: true, correct: res.correct, total: res.total, pct: res.pct, at: Date.now(), answers: live.st };
     store.save(lp.d);
+    if (GA.cloud && GA.cloud.enabled()) GA.cloud.queueProgress(pick.term, lid, lp.rec.practice, lp.rec.official);
     // freeze UI immediately
     host.querySelectorAll(".exercise").forEach(function (n) { n.classList.add("done"); });
     var meter = host.querySelector(".bank-meter"); if (meter) meter.remove();
@@ -2407,7 +2430,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<div><div class="panel"><h3><span class="panel-dot" style="background:var(--accent-coral)"></span>Focus areas</h3>' + weak + '</div>' +
       '<div class="panel"><h3><span class="panel-dot" style="background:var(--accent-violet)"></span>Badges (' + earned + '/' + BADGES.length + ')</h3><div>' + chips + '</div>' +
       '<div style="margin-top:14px"><button class="btn ghost small sentence" onclick="GA.go(\'#badges\')">View all badges</button>' + (s.pathwayMaster ? ' <button class="btn gold small sentence" onclick="GA._myCert()">View certificate</button>' : '') + '</div></div></div></div>' +
-      '<p class="state-note">Your progress is stored on this device until cloud synchronisation is enabled.</p></div>';
+      '<p class="state-note">Your progress is saved on this device and synced to your class space when you sign in online.</p></div>';
   };
 
   // Derived progress toward each badge (display only — requirements unchanged).
@@ -2620,7 +2643,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     else { el("view").innerHTML = teacherAuthGate("Incorrect code. Try again."); var t = el("tcode"); if (t) t.focus(); }
   };
   GA._teacherPick = function (term, grade, stream) { teacher.term = term; teacher.grade = grade; teacher.stream = stream; render(); };
-  GA._teacherLogout = function () { teacher.authed = false; teacher.term = teacher.grade = teacher.stream = null; GA._authTab = "login"; GA.go("#entrance"); };
+  GA._teacherLogout = function () { try { GA.cloud.teacherSignOut(); GA.cloud.clearStudent(); } catch (_) {} teacher.authed = false; teacher.term = teacher.grade = teacher.stream = null; GA._authTab = "login"; GA.go("#entrance"); };
   GA._editNote = function (num) {
     var cur = TeacherNotes.get(TID, num);
     var v = window.prompt("Private label for student " + num + " (only you see this).\n(Leave blank to remove. Max " + TeacherNotes.MAX + " characters.)", cur);
@@ -3100,19 +3123,24 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
   GA.rememberUser = rememberUser; GA.getRememberedUser = getRememberedUser; GA.clearRememberedUser = clearRememberedUser;
 
   GA._dismissReturn = false;
-  GA._forgetUser = function () { clearRememberedUser(); GA._dismissReturn = false; render(); };
+  GA._forgetUser = function () { try { GA.cloud.clearStudent(); } catch (_) {} clearRememberedUser(); GA._dismissReturn = false; render(); };
   GA._dismissReturnCard = function () { GA._dismissReturn = true; render(); };
-  GA.continueRememberedUser = function () {
+  GA.continueRememberedUser = async function () {
     var u = getRememberedUser(); if (!u) { render(); return; }
     rememberUser(u); // refresh lastAccessedAt
-    // NOTE (backend): a real implementation would re-validate a session token here.
     if (u.role === "teacher") {
+      if (GA.cloud.enabled()) {
+        var sess = await GA.cloud.getSession();
+        if (!sess && GA.cloud.online()) {  // session gone and server reachable -> fresh login
+          clearRememberedUser(); GA._authTab = "login"; GA.go("#access-teacher"); return;
+        }
+      }
       if (u.displayName) applyTeacherProfile({ name: u.displayName, school: u.school });
       teacher.authed = true; GA.go("#teacher");
     } else {
       var id = String(u.username || u.displayName || "").trim();
       if (!id) { render(); return; }
-      session.num = id; GA.go("#home");
+      session.num = id; GA.go("#home");  // cloud sync resumes after the student re-enters their code
     }
   };
 
@@ -3121,7 +3149,152 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
   GA.showStudentAccess = function () { try { if (GA.fx) GA.fx.play("nav"); } catch (_) {} GA.go("#access-student"); };
   GA.showTeacherAccess = function () { try { if (GA.fx) GA.fx.play("nav"); } catch (_) {} GA._authTab = "login"; GA.go("#access-teacher"); };
 
-  /* ---------- auth stubs (cloud-ready; local/demo logic for now) ------ */
+  /* ====================================================================
+     CLOUD ADAPTER  (the one seam that talks to Supabase)
+     Teachers ride Supabase Auth (browser session). Students never get a
+     session — every push/pull re-validates a teacher-issued (username,
+     code) server-side, so there is no student uid to mismatch. The
+     student's code lives in memory ONLY (never localStorage).
+
+     Contract used by the auth handlers below:
+       method returns null          -> cloud not configured -> use local logic
+       method returns {ok:true,...} -> success
+       method returns {ok:false,..} -> server reachable but rejected / offline
+     ==================================================================== */
+  GA.cloud = (function () {
+    var cfg = (GA.cloudConfig || {});
+    var client = null, ready = false, tried = false;
+    var stu = { username: null, code: null };   // in-memory student secret
+    var queue = [];                               // pending progress pushes
+
+    function init() {
+      if (tried) return ready;
+      tried = true;
+      if (!cfg.url || !cfg.key || !window.supabase || !window.supabase.createClient) { ready = false; return false; }
+      try {
+        client = window.supabase.createClient(cfg.url, cfg.key, {
+          auth: { persistSession: true, autoRefreshToken: true, storageKey: "mm_grammar_sb_auth" }
+        });
+        ready = true;
+      } catch (_) { ready = false; }
+      return ready;
+    }
+    function online() { return ready && (typeof navigator === "undefined" || navigator.onLine !== false); }
+    function offlineErr() { return { ok: false, error: "Can't reach the server right now — please check your connection and try again." }; }
+
+    return {
+      enabled: function () { return init(); },
+      online: online,
+
+      /* ---- teacher auth (Supabase Auth) ---- */
+      teacherSignUp: async function (email, password, meta) {
+        if (!init()) return null;
+        try {
+          var r = await client.auth.signUp({ email: email, password: password, options: { data: meta || {} } });
+          if (r.error) return { ok: false, error: r.error.message };
+          var hasSession = !!(r.data && r.data.session);
+          return { ok: true, profile: meta || {}, needsConfirm: !hasSession };
+        } catch (_) { return offlineErr(); }
+      },
+      teacherSignIn: async function (email, password) {
+        if (!init()) return null;
+        try {
+          var r = await client.auth.signInWithPassword({ email: email, password: password });
+          if (r.error) return { ok: false, error: r.error.message };
+          var prof = null;
+          try {
+            var pr = await client.from("teachers").select("name,school,emirate").eq("id", r.data.user.id).single();
+            if (!pr.error) prof = pr.data;
+          } catch (_) {}
+          return { ok: true, profile: prof || {} };
+        } catch (_) { return offlineErr(); }
+      },
+      teacherSignOut: async function () { if (init()) { try { await client.auth.signOut(); } catch (_) {} } },
+      getSession: async function () {
+        if (!init()) return null;
+        try { var r = await client.auth.getSession(); return (r && r.data && r.data.session) ? r.data.session : null; }
+        catch (_) { return null; }
+      },
+      forgotPassword: async function (email) {
+        if (!init()) return null;
+        try { await client.auth.resetPasswordForEmail(email); } catch (_) {}
+        return { ok: true, message: "If an account exists for this email, a reset link will be sent. Please check your inbox and spam or junk folder." };
+      },
+
+      /* ---- student RPCs (code re-validated each call) ---- */
+      setStudent: function (username, code) { stu.username = username || null; stu.code = code || null; },
+      clearStudent: function () { stu.username = null; stu.code = null; queue = []; },
+      studentLogin: async function (username, code) {
+        if (!init()) return null;
+        try {
+          var r = await client.rpc("student_login", { p_username: username, p_code: code });
+          if (r.error) return { ok: false, error: "Login not recognised." };
+          return r.data;
+        } catch (_) { return offlineErr(); }
+      },
+      studentPull: async function () {
+        if (!init() || !stu.username) return null;
+        try {
+          var r = await client.rpc("student_pull_progress", { p_username: stu.username, p_code: stu.code });
+          if (r.error) return null;
+          return r.data;
+        } catch (_) { return null; }
+      },
+      queueProgress: function (term, lid, practice, official) {
+        queue.push({ term: term, lesson_id: lid, practice: practice || null, official: official || null, updated_at: new Date().toISOString() });
+        this.flush();
+      },
+      flush: async function () {
+        if (!init() || !stu.username || !online() || !queue.length) return;
+        var batch = queue.slice();
+        try {
+          var r = await client.rpc("student_push_progress_batch", { p_username: stu.username, p_code: stu.code, p_items: batch });
+          if (r && !r.error && r.data && r.data.ok) {
+            queue = queue.filter(function (x) { return batch.indexOf(x) === -1; });  // drop exactly the flushed items
+          }
+        } catch (_) { /* keep queue for retry */ }
+      },
+
+      /* ---- teacher roster (code hashed server-side) ---- */
+      teacherUpsertStudent: async function (username, number, code) {
+        if (!init()) return null;
+        try {
+          var r = await client.rpc("teacher_upsert_student", { p_username: username, p_student_number: number, p_code: code });
+          if (r.error) return { ok: false, error: r.error.message };
+          return r.data;
+        } catch (_) { return offlineErr(); }
+      }
+    };
+  })();
+
+  // Pull cloud progress for the current student and merge into local store
+  // (last-write-wins at the lesson-cell level). No-op when cloud is off.
+  GA._pullCloudProgress = async function () {
+    if (!GA.cloud.enabled() || !session.num) return;
+    var res = await GA.cloud.studentPull();
+    if (!res || !res.ok || !Array.isArray(res.rows)) return;
+    var num = session.num;
+    res.rows.forEach(function (row) {
+      var lp = lessonProgress(num, row.term, row.lesson_id);
+      var localT = Math.max(
+        (lp.rec.practice && lp.rec.practice.lastAt) || 0,
+        (lp.rec.official && lp.rec.official.at) || 0
+      );
+      var cloudT = Date.parse(row.updated_at) || 0;
+      if (cloudT > localT) {
+        if (row.practice) lp.rec.practice = row.practice;
+        if (row.official) lp.rec.official = row.official;
+        store.save(lp.d);
+      }
+    });
+  };
+
+  // Retry any queued pushes when connectivity returns.
+  if (typeof window !== "undefined" && window.addEventListener) {
+    window.addEventListener("online", function () { try { GA.cloud.flush(); } catch (_) {} });
+  }
+
+  /* ---------- auth stubs (local/demo logic; used when cloud is off) --- */
   GA.auth = (function () {
     var TKEY = "mm_grammar_teacher_accounts", SKEY = "mm_grammar_student_accounts";
     function read(k) { try { var o = JSON.parse(localStorage.getItem(k)); return (o && typeof o === "object") ? o : {}; } catch (_) { return {}; } }
@@ -3319,21 +3492,24 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     setTimeout(function () { GA._focus(GA._authTab === "signup" ? "tsName" : (GA._authTab === "forgot" ? "tfEmail" : "tlEmail")); }, 30);
   };
 
-  GA._studentLogin = function () {
+  GA._studentLogin = async function () {
     var u = (el("sUser") && el("sUser").value) || "", c = (el("sCode") && el("sCode").value) || "";
-    var r = GA.auth.handleStudentLogin(u, c);
+    var r = await GA.cloud.studentLogin(u, c);          // null when cloud is off
+    if (r == null) r = GA.auth.handleStudentLogin(u, c); // offline / unconfigured fallback
     if (!r.ok) { setAuthErr("sErr", r.error); try { if (GA.fx) GA.fx.play("warn"); } catch (_) {} return; }
     session.num = String(r.num).trim();
+    if (GA.cloud.enabled()) { GA.cloud.setStudent(u, c); await GA._pullCloudProgress(); }
     rememberUser({ role: "student", username: session.num, displayName: session.num });
     GA.go("#home");
   };
 
-  GA._teacherLoginNew = function () {
+  GA._teacherLoginNew = async function () {
     var email = (el("tlEmail") && el("tlEmail").value) || "", pass = (el("tlPass") && el("tlPass").value) || "";
     if (!String(email).trim()) return setAuthErr("tErr", "Please enter your email.");
     if (!GA.auth.emailValid(email)) return setAuthErr("tErr", "Please enter a valid email address.");
     if (!pass) return setAuthErr("tErr", "Please enter your password.");
-    var r = GA.auth.handleTeacherLogin(email, pass);
+    var r = await GA.cloud.teacherSignIn(email, pass);     // null when cloud is off
+    if (r == null) r = GA.auth.handleTeacherLogin(email, pass);
     if (!r.ok) { setAuthErr("tErr", r.error); try { if (GA.fx) GA.fx.play("warn"); } catch (_) {} return; }
     if (r.profile) applyTeacherProfile(r.profile);
     var prof = r.profile || {};
@@ -3341,7 +3517,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     teacher.authed = true; GA.go("#teacher");
   };
 
-  GA._teacherSignup = function () {
+  GA._teacherSignup = async function () {
     var p = {
       name: (el("tsName") && el("tsName").value || "").trim(),
       email: (el("tsEmail") && el("tsEmail").value || "").trim(),
@@ -3356,16 +3532,23 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     if (!p.emirate) return setAuthErr("tErr", "Please select your emirate.");
     if (p.password.length < 4) return setAuthErr("tErr", "Please choose a password of at least 4 characters.");
     if (p.password !== p.password2) return setAuthErr("tErr", "The two passwords do not match.");
-    var r = GA.auth.handleTeacherSignup(p);
+    var r = await GA.cloud.teacherSignUp(p.email, p.password, { name: p.name, school: p.school, emirate: p.emirate });
+    if (r == null) r = GA.auth.handleTeacherSignup(p);   // offline / unconfigured fallback
     if (!r.ok) { setAuthErr("tErr", r.error); try { if (GA.fx) GA.fx.play("warn"); } catch (_) {} return; }
-    applyTeacherProfile(r.profile || p);
+    if (r.needsConfirm) {   // cloud requires email confirmation before a session exists
+      GA._authTab = "login"; render();
+      setTimeout(function () { setAuthErr("tErr", "Account created. Please confirm your email, then log in.", true); }, 30);
+      return;
+    }
+    applyTeacherProfile(p);
     rememberUser({ role: "teacher", displayName: p.name, email: p.email.toLowerCase(), school: p.school, emirate: p.emirate });
     teacher.authed = true; GA.go("#teacher");
   };
 
-  GA._forgotPassword = function () {
+  GA._forgotPassword = async function () {
     var email = (el("tfEmail") && el("tfEmail").value) || "";
-    var r = GA.auth.handleForgotPassword(email);
+    var r = await GA.cloud.forgotPassword(email);
+    if (r == null) r = GA.auth.handleForgotPassword(email);
     setAuthErr("tErr", r.ok ? r.message : r.error, r.ok);
   };
 
