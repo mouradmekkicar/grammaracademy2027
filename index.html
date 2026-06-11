@@ -2730,9 +2730,18 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '.pw-tile .s{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--pa,#888);margin-top:4px;font-weight:600}' +
       '.pw-tile.active{outline:2px solid var(--gold,#c9a961);outline-offset:1px;box-shadow:0 4px 14px rgba(201,169,97,.3)}' +
       '.pw-term{font-family:var(--sans-ui);font-size:.72rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold-700,#a07d22);margin:0 0 9px}' +
+      '.pw-acc{border:1px solid var(--line,#e6e0d4);border-radius:12px;margin-bottom:10px;overflow:hidden;background:#fff}' +
+      '.pw-acc-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:transparent;border:none;cursor:pointer;padding:14px 16px;font-family:var(--sans-ui);font-size:.74rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold-700,#a07d22);font-weight:700;text-align:left}' +
+      '.pw-acc-head:hover{background:var(--navy-50,#f3f5f9)}' +
+      '.pw-acc-head.open{color:var(--navy-800,#0a2540);background:var(--navy-50,#f3f5f9);border-bottom:1px solid var(--line,#e6e0d4)}' +
+      '.pw-acc-chev{font-size:.8rem;color:var(--muted,#6b7280);transition:transform .15s ease}' +
+      '.pw-acc-head.open .pw-acc-chev{transform:rotate(90deg);color:var(--gold-700,#a07d22)}' +
+      '.pw-acc .pw-grid{padding:14px 16px 16px}' +
       '</style>';
+    if (GA._expandedTerm === undefined) { try { GA._expandedTerm = localStorage.getItem("mm_grammar_expanded_term") || null; } catch (_) { GA._expandedTerm = null; } }
     var pwGroups = pwStyle + Object.keys(byTerm).sort().map(function (t) {
       var grp = byTerm[t];
+      var isOpen = (GA._expandedTerm === t);
       var tiles = grp.items.sort(function (a, b) { return gradeRank(a) - gradeRank(b); }).map(function (p) {
         var active = (teacher.term === p.term && teacher.grade === p.grade && teacher.stream === p.stream);
         var c = GRADE_COLOR[String(p.grade)] || { a: "#888", t: "#fff" };
@@ -2740,7 +2749,12 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
         return '<button class="pw-tile' + (active ? " active" : "") + '" style="--pa:' + c.a + ';--pt:' + c.t + '" onclick="GA._teacherPick(\'' + p.term + '\',\'' + p.grade + '\',\'' + p.stream + '\')">' +
           '<span class="g">Grade ' + esc(p.grade) + '</span><span class="s">' + stream + '</span></button>';
       }).join("");
-      return '<div style="margin-bottom:18px"><div class="pw-term">' + esc(grp.label) + '</div><div class="pw-grid">' + tiles + '</div></div>';
+      return '<div class="pw-acc">' +
+        '<button class="pw-acc-head' + (isOpen ? " open" : "") + '" aria-expanded="' + isOpen + '" onclick="GA._toggleTerm(\'' + t + '\')">' +
+          '<span>' + esc(grp.label) + '</span><span class="pw-acc-chev">\u25B8</span>' +
+        '</button>' +
+        (isOpen ? '<div class="pw-grid">' + tiles + '</div>' : '') +
+      '</div>';
     }).join("");
 
     var head = '<div class="page">' +
@@ -2805,6 +2819,12 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     else { el("view").innerHTML = teacherAuthGate("Incorrect code. Try again."); var t = el("tcode"); if (t) t.focus(); }
   };
   GA._teacherPick = function (term, grade, stream) { teacher.term = term; teacher.grade = grade; teacher.stream = stream; render(); };
+
+  GA._toggleTerm = function (t) {
+    GA._expandedTerm = (GA._expandedTerm === t) ? null : t;   // accordion: same term closes; different term replaces
+    try { localStorage.setItem("mm_grammar_expanded_term", GA._expandedTerm || ""); } catch (_) {}
+    render();
+  };
 
   // ---- Class accounts (cloud student logins) ----
   // Easy-to-read code: 6 chars, no ambiguous glyphs (no I/L/O/0/1).
