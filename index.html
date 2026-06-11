@@ -683,13 +683,38 @@ table.peek th{font-family:var(--sans-ui);font-size:.7rem;letter-spacing:1px;text
   body.printing-report .topbar,body.printing-report .nav,body.printing-report .foot,body.printing-report .report-tools,body.printing-report .btn{display:none!important}
   body.printing-report{background:#fff!important}
   body.printing-report .page{padding:0;max-width:none}
-  body.printing-report .report-sheet{border:none!important;border-top:4px solid var(--navy-900)!important;box-shadow:none!important;border-radius:0!important;padding:8mm!important;page-break-after:always;break-after:page;background:#fff!important;font-size:.84rem;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.printing-report .report-sheet{border:none!important;border-top:4px solid var(--navy-900)!important;box-shadow:none!important;border-radius:0!important;padding:6mm!important;page-break-after:always;break-after:page;background:#fff!important;font-size:.72rem;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body.printing-report .report-sheet:last-child{page-break-after:auto;break-after:auto}
   body.printing-report .r-header,body.printing-report .r-student-info,body.printing-report .r-score-tile,body.printing-report .r-badges,body.printing-report .r-section,body.printing-report .r-perf-grid,body.printing-report .r-skills,body.printing-report .r-skill,body.printing-report .r-outcomes,body.printing-report .r-outcome-col,body.printing-report .r-comment-reco-row,body.printing-report .r-comment,body.printing-report .r-reco,body.printing-report .r-arabic,body.printing-report .r-signature{page-break-inside:avoid;break-inside:avoid}
   body.printing-report .r-section-head,body.printing-report .r-ornament{page-break-after:avoid;break-after:avoid}
   body.printing-report .report-sheet{orphans:3;widows:3}
   body.printing-report .r-score-tile,body.printing-report .r-skill-bar-fill,body.printing-report .r-engagement,body.printing-report .r-score-band,body.printing-report .r-outcome-col,body.printing-report .r-comment,body.printing-report .r-reco,body.printing-report .r-summary-text,body.printing-report .r-arabic,body.printing-report .r-student-info{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body.printing-report .r-comment-reco-row{display:grid;grid-template-columns:1.2fr 1fr;gap:10px}
+  /* --- compact pass: fit a full report in two A4 pages --- */
+  body.printing-report .r-section{margin-bottom:10px!important}
+  body.printing-report .r-header{margin-bottom:9px!important;padding-bottom:9px!important}
+  body.printing-report .r-title{font-size:1.18rem!important}
+  body.printing-report .r-subtitle{font-size:.7rem!important}
+  body.printing-report .r-ornament{margin:5px 0!important}
+  body.printing-report .r-student-info{margin-bottom:11px!important;padding:9px 11px!important;gap:8px!important}
+  body.printing-report .r-section-head{margin-bottom:6px!important}
+  body.printing-report .r-section-head h3{font-size:.84rem!important}
+  body.printing-report .r-perf-grid{gap:12px!important}
+  body.printing-report .r-score-tile{padding:11px!important}
+  body.printing-report .r-score-tile .r-score-val{font-size:1.9rem!important}
+  body.printing-report .r-summary-text{font-size:.74rem!important;line-height:1.45!important}
+  body.printing-report .r-skills{gap:5px 18px!important}
+  body.printing-report .r-skill-name{font-size:.7rem!important}
+  body.printing-report .r-outcomes{gap:12px!important}
+  body.printing-report .r-outcome-col{padding:9px 11px!important}
+  body.printing-report .r-outcome-col h4{font-size:.72rem!important;margin-bottom:5px!important}
+  body.printing-report .r-outcome-list li{padding:3px 0!important;font-size:.72rem!important}
+  body.printing-report .r-comment,body.printing-report .r-reco{padding:9px 11px!important}
+  body.printing-report .r-comment-body,body.printing-report .r-reco li{font-size:.74rem!important;line-height:1.45!important}
+  body.printing-report .r-arabic{padding:9px 12px!important;font-size:.82rem!important;line-height:1.6!important}
+  body.printing-report .r-badges{gap:6px!important}
+  body.printing-report .r-badge-chip{font-size:.68rem!important;padding:3px 8px!important}
+  body.printing-report .r-signature{margin-top:13px!important;padding-top:11px!important}
   @page{size:A4;margin:0}
 }
 
@@ -2311,9 +2336,9 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
 
     return '<div class="page"><div class="eyebrow">Teacher peek</div><h1>Registry &amp; submissions</h1>' +
       '<p class="section-sub">Proof the foundation holds: modules registered, validator status, and the one-submission lock recording final scores.</p>' +
+      '<h3 style="margin:8px 0 10px">Official submissions (locked)</h3><div class="card" style="padding:0;overflow:auto"><table class="peek"><tr><th>Student</th><th>Term</th><th>Lesson</th><th>Score</th><th>Submitted</th></tr>' + subs + '</table></div>' +
       valid +
       '<h3 style="margin:24px 0 10px">Registered modules</h3><div class="card" style="padding:0;overflow:auto"><table class="peek"><tr><th>Term</th><th>Stream</th><th>CEFR</th><th>Lessons</th></tr>' + mods + '</table></div>' +
-      '<h3 style="margin:28px 0 10px">Official submissions (locked)</h3><div class="card" style="padding:0;overflow:auto"><table class="peek"><tr><th>Student</th><th>Term</th><th>Lesson</th><th>Score</th><th>Submitted</th></tr>' + subs + '</table></div>' +
       '<div style="margin-top:24px"><button class="btn ghost small" onclick="GA.go(\'#teacher\')">← Teacher dashboard</button> <button class="btn ghost small" onclick="GA.go(\'#home\')">Back to academy</button></div></div>';
   };
 
