@@ -1787,6 +1787,220 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
 @media print{
   .entry-stage.portal,.portal-inner,.portal-glyphs,.portal-bg,.portal-foot,.welcome-veil{display:none!important}
 }
+
+/* ====================================================================
+   GLOBAL VISUAL REFINEMENT (additive · v6) — SCREEN ONLY.
+   Full-app polish: header GA crest · background depth · image-frame
+   consistency · teacher hero · empty states · tables · buttons/tabs ·
+   cards · focus & motion. Print / report / certificate CSS untouched.
+   ==================================================================== */
+
+/* ---- Header / Navbar: balance the GA crest + refine the lockup ---- */
+.brand-mark{font-size:1rem;letter-spacing:.5px;font-weight:700}
+.brand{padding:2px 4px;border-radius:var(--r-md);transition:background var(--t-fast) var(--ease)}
+.brand:hover{background:rgba(200,154,60,.08)}
+.brand:focus-visible{outline:2px solid var(--gold-500);outline-offset:2px}
+.topbar{box-shadow:0 1px 0 rgba(200,154,60,.18),0 6px 18px rgba(14,27,58,.04)}
+.session-chip{box-shadow:var(--shadow-1);font-weight:600}
+.session-chip .dot{box-shadow:0 0 0 3px rgba(47,107,70,.14)}
+.session-chip.teacher .dot{box-shadow:0 0 0 3px rgba(42,68,120,.16)}
+
+/* ---- Background depth: faint parchment weave behind the existing glow ---- */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.55;
+  background-image:
+    repeating-linear-gradient(45deg,rgba(138,106,32,.014) 0 2px,transparent 2px 5px),
+    repeating-linear-gradient(-45deg,rgba(30,50,96,.012) 0 2px,transparent 2px 5px)}
+
+/* ---- Image frames: consistent rounded, soft-shadowed, gently vignetted ---- */
+.ga-img:not(.hero-art):not(.cab-art){box-shadow:var(--shadow-1)}
+.ga-img.has-img::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  box-shadow:inset 0 0 36px rgba(14,27,58,.14);background:linear-gradient(180deg,transparent 62%,rgba(14,27,58,.10))}
+.hero .hero-art.has-img::after,.t-banner .ga-img.has-img::after{display:none}
+
+/* ---- Teacher hero: richer overlay, gold accent line, better text anchoring ---- */
+.t-banner{min-height:128px;box-shadow:var(--shadow-2)}
+.t-banner::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(105deg,rgba(14,27,58,.84) 0%,rgba(14,27,58,.5) 50%,rgba(14,27,58,.2) 100%)}
+.t-banner .ga-img{opacity:.55}
+.t-banner .tb-text{background:none;padding-top:26px}
+.t-banner .tb-text::before{content:"";position:absolute;left:22px;top:14px;width:34px;height:3px;border-radius:2px;
+  background:linear-gradient(90deg,var(--gold-400),var(--gold-600))}
+
+/* ---- Empty states: frame the illustration as an intentional card ---- */
+.empty-state{background:linear-gradient(180deg,var(--white),var(--paper));border:1px solid var(--line);
+  border-radius:var(--r-lg);padding:30px 22px;box-shadow:var(--shadow-1);max-width:560px;margin:8px auto}
+.empty-state .ga-img{border-radius:var(--r-lg);box-shadow:var(--shadow-1)}
+.empty-state p{font-style:normal;color:var(--ink-soft);max-width:42ch;margin:0 auto}
+
+/* ---- Tables: softer sticky headers, gentle row hover ---- */
+.modlib th,.preview-table th{background:var(--navy-50);font-weight:700;color:var(--navy-800);
+  letter-spacing:.4px;position:sticky;top:0;z-index:1}
+.modlib tbody tr,.preview-table tbody tr{transition:background var(--t-fast) var(--ease)}
+.modlib tbody tr:hover,.preview-table tbody tr:hover{background:var(--gold-100)}
+
+/* ---- Buttons: equal height + a warm danger variant ---- */
+.btn{min-height:42px}
+.btn.small{min-height:34px}
+.btn.danger{background:var(--accent-coral);border-color:#b4453d;color:#fff}
+.btn.danger:hover{background:#cf5b52}
+
+/* ---- Tabs: horizontal scroll on small screens (no clipping) ---- */
+@media(max-width:560px){
+  .tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{white-space:nowrap;flex:0 0 auto}
+}
+
+/* ---- Cards: a touch more depth on lift ---- */
+.card.lift:hover{box-shadow:var(--shadow-3),0 0 0 1px rgba(200,154,60,.18)}
+
+/* ---- Reduced motion ---- */
+@media(prefers-reduced-motion:reduce){.brand,.card.lift{transition:none!important}}
+
+/* ---- Print: all v6 screen embellishments off ---- */
+@media print{
+  body::before{display:none!important}
+  .ga-img.has-img::after,.t-banner::before,.t-banner .tb-text::before{display:none!important}
+}
+
+/* ====================================================================
+   LESSON STEP-CARDS · CREST UNIFICATION · EXTRA POLISH (additive · v7)
+   Turns the learn-tab teaching blocks into an explicit numbered step
+   sequence, unifies every academy crest to "GA", and adds a few tasteful
+   finishing touches. Screen-only except the (content-only) crest text.
+   ==================================================================== */
+
+/* ---- Numbered lesson step-cards (Learn tab) ---- */
+.learn-steps{counter-reset:tb}
+.learn-steps .tb{counter-increment:tb;position:relative;
+  transition:transform var(--t-med) var(--ease),box-shadow var(--t-med) var(--ease)}
+.learn-steps .tb:hover{transform:translateY(-2px);box-shadow:var(--shadow-2)}
+.learn-steps .tb .tb-h{flex-wrap:wrap;align-items:center}
+.learn-steps .tb .tb-h::before{content:counter(tb);flex:0 0 auto;width:26px;height:26px;border-radius:50%;
+  display:grid;place-items:center;font-family:var(--sans-ui);font-size:.78rem;font-weight:700;letter-spacing:0;
+  color:#fff;background:var(--navy-600);box-shadow:0 1px 3px rgba(14,27,58,.22)}
+.learn-steps .tb .tb-h::after{flex:1 0 100%;font-family:var(--sans-ui);font-weight:400;text-transform:none;
+  letter-spacing:.1px;font-size:.74rem;line-height:1.35;color:var(--muted);margin-top:4px;padding-left:34px}
+/* zone-coloured badges + step captions */
+.learn-steps .tb-why .tb-h::before,.learn-steps .tb-rule .tb-h::before{background:var(--accent-sky)}
+.learn-steps .tb-example .tb-h::before{background:var(--gold-600)}
+.learn-steps .tb-mistake .tb-h::before{background:var(--accent-coral)}
+.learn-steps .tb-trap .tb-h::before{background:var(--accent-amber)}
+.learn-steps .tb-arabic .tb-h::before{background:var(--navy-700)}
+.learn-steps .tb-why .tb-h::after{content:"Why this grammar point is worth your time."}
+.learn-steps .tb-rule .tb-h::after{content:"The core pattern to learn and remember."}
+.learn-steps .tb-example .tb-h::after{content:"See it used correctly \2014 and incorrectly."}
+.learn-steps .tb-mistake .tb-h::after{content:"Common slips to avoid before the Mastery Gate."}
+.learn-steps .tb-trap .tb-h::after{content:"Tricky cases examiners love to test."}
+.learn-steps .tb-arabic .tb-h::after{content:"\0634\0631\062D \0645\0628\0633\0651\0637 \0628\0627\0644\0639\0631\0628\064A\0629";
+  direction:rtl;text-align:right;padding-left:0;padding-right:34px}
+/* example accent shifts toward navy/gold per zone guidance (scoped to learn-steps only) */
+.learn-steps .tb-example{border-left-color:var(--gold-500)}
+.learn-steps .tb-example .tb-h{color:var(--gold-700)}
+
+/* ---- Crest unification: balance "GA" inside every academy crest ---- */
+.brand-mark{position:relative}
+.brand-mark::after{content:"";position:absolute;inset:4px;border-radius:50%;
+  border:1px solid rgba(14,27,58,.32);pointer-events:none}
+.r-crest{font-size:1.35rem;letter-spacing:1px}
+.cert-crest{font-size:1.5rem;letter-spacing:1.5px}
+.lp-rh-crest{font-size:.6rem;letter-spacing:.4px}
+
+/* ---- Custom gold scrollbar (subtle, premium) ---- */
+*{scrollbar-width:thin;scrollbar-color:var(--gold-300) transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--gold-300);border-radius:999px;border:2px solid var(--paper)}
+::-webkit-scrollbar-thumb:hover{background:var(--gold-400)}
+
+/* ---- Selection colour on-brand ---- */
+::selection{background:rgba(200,154,60,.28);color:var(--navy-900)}
+
+/* ---- Reduced motion ---- */
+@media(prefers-reduced-motion:reduce){.learn-steps .tb{transition:none!important}}
+
+/* ---- Print: step-card chrome stays out of worksheets ---- */
+@media print{
+  .learn-steps .tb .tb-h::before,.learn-steps .tb .tb-h::after{display:none!important}
+}
+
+/* ====================================================================
+   FINISHING FLOURISHES (additive · v8) — SCREEN ONLY.
+   Hero underline · dashboard dividers · count-up + ring draw · badge
+   shine · lesson progress spine · frosted teacher headers · duotone
+   cover art. All reduced-motion & print safe.
+   ==================================================================== */
+
+/* ---- Hero: gold underline that draws in beneath the title ---- */
+.portal-title{position:relative;display:inline-block;padding-bottom:16px}
+.portal-title::after{content:"";position:absolute;left:50%;bottom:2px;height:3px;width:150px;border-radius:999px;
+  transform:translateX(-50%) scaleX(0);transform-origin:center;
+  background:linear-gradient(90deg,transparent,var(--gold-500),var(--gold-300),var(--gold-500),transparent);
+  animation:goldDraw 1s var(--ease) .25s forwards}
+@keyframes goldDraw{to{transform:translateX(-50%) scaleX(1)}}
+
+/* ---- Dashboard: gold-diamond section dividers between stacked panels ---- */
+.dash-grid .panel + .panel{position:relative;margin-top:32px}
+.dash-grid .panel + .panel::before{content:"";position:absolute;top:-17px;left:6%;right:6%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--line-dark) 28%,var(--line-dark) 72%,transparent)}
+.dash-grid .panel + .panel::after{content:"";position:absolute;top:-21px;left:50%;
+  transform:translateX(-50%) rotate(45deg);width:9px;height:9px;background:var(--gold-400);
+  border:1px solid var(--gold-600);box-shadow:0 0 0 4px var(--paper)}
+
+/* ---- Dashboard ring: a longer, deliberate draw-in ---- */
+.ring .ring-fg{transition:stroke-dashoffset 1.1s var(--ease)}
+
+/* ---- Badge Vault: one-time light sweep across newly-shown earned medals ---- */
+.badge-item.earned .badge-medal{position:relative;overflow:hidden}
+.badge-item.earned .badge-medal::after{content:"";position:absolute;top:-60%;left:-70%;width:55%;height:220%;
+  transform:rotate(22deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.72),transparent);
+  animation:medalShine 1.5s var(--ease) .35s 1 both;pointer-events:none}
+@keyframes medalShine{0%{left:-70%}60%{left:150%}100%{left:150%}}
+
+/* ---- Lesson progress spine: gold line connecting numbered step-cards ---- */
+.learn-steps .tb:not(:last-child)::after{content:"";position:absolute;left:33px;bottom:-16px;width:2px;height:16px;
+  background:linear-gradient(180deg,var(--gold-400),var(--gold-300));z-index:0}
+
+/* ---- Teacher tables: frosted sticky column headers on long, scrollable rosters ---- */
+.card:has(> table.student-list),.card:has(> table.matrix),
+.card:has(> table.modlib),.card:has(> table.peek){max-height:72vh}
+.peek th,.student-list th,.matrix th,.modlib th{position:sticky;top:0;z-index:2;
+  background:rgba(241,244,250,.92);-webkit-backdrop-filter:saturate(150%) blur(6px);
+  backdrop-filter:saturate(150%) blur(6px);box-shadow:0 1px 0 var(--line-dark)}
+
+/* ---- Cover art: one cohesive navy/gold duotone across chapter & library images ---- */
+.chapter-head .ga-img.has-img>img,
+.ga-img.has-img.cab-art>img,
+.ga-img.has-img[data-image$="-background.webp"]>img{filter:grayscale(.72) contrast(1.05) brightness(1.03)}
+.chapter-head .ga-img.has-img::before,
+.ga-img.has-img.cab-art::before,
+.ga-img.has-img[data-image$="-background.webp"]::before{content:"";position:absolute;inset:0;z-index:1;
+  pointer-events:none;mix-blend-mode:multiply;background:linear-gradient(135deg,#2a4478 0%,#16294f 55%,#0e1b3a 100%)}
+.chapter-head .ga-img.has-img::after,
+.ga-img.has-img.cab-art::after,
+.ga-img.has-img[data-image$="-background.webp"]::after{
+  background:radial-gradient(120% 90% at 82% 8%,rgba(216,181,101,.5),transparent 55%),
+            linear-gradient(180deg,transparent 60%,rgba(14,27,58,.18));
+  mix-blend-mode:screen;box-shadow:none}
+
+/* ---- Reduced motion ---- */
+@media(prefers-reduced-motion:reduce){
+  .portal-title::after{animation:none;transform:translateX(-50%) scaleX(1)}
+  .badge-item.earned .badge-medal::after{display:none}
+  .ring .ring-fg{transition:none}
+}
+
+/* ---- Print: flourishes never print ---- */
+@media print{
+  .portal-title::after,
+  .dash-grid .panel + .panel::before,.dash-grid .panel + .panel::after,
+  .badge-item.earned .badge-medal::after,
+  .learn-steps .tb:not(:last-child)::after,
+  .chapter-head .ga-img.has-img::before,.ga-img.has-img.cab-art::before,
+  .ga-img.has-img[data-image$="-background.webp"]::before,
+  .chapter-head .ga-img.has-img::after,.ga-img.has-img.cab-art::after,
+  .ga-img.has-img[data-image$="-background.webp"]::after{display:none!important}
+}
 </style>
 </head>
 <body>
@@ -1795,7 +2009,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
   <header class="topbar">
     <div class="topbar-inner">
       <button class="brand" onclick="GA.go('#home')" aria-label="Grammar Academy home">
-        <span class="brand-mark" aria-hidden="true">M</span>
+        <span class="brand-mark" aria-hidden="true">GA</span>
         <span class="brand-text">
           <span class="brand-name">Grammar Academy</span>
           <span class="brand-sub">Mourad Mekki Teacher Toolkit</span>
@@ -2659,7 +2873,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       (L.arabicInsight ? '<div class="tb tb-arabic"><div class="tb-h">شرح بالعربية \u00b7 Arabic insight</div><div class="arabic" dir="rtl">' + L.arabicInsight + '</div></div>' : "");
 
     var body;
-    if (tab === "learn") body = learn;
+    if (tab === "learn") body = '<div class="learn-steps">' + learn + '</div>';
     else if (tab === "practice") body = '<div id="bankHost"></div><div style="margin-top:6px"><button class="btn sentence" onclick="GA._checkPractice(\'' + lid + '\')">Check answers</button> <button class="btn ghost sentence" onclick="GA._openLesson(\'' + lid + '\',\'practice\')">Reset &amp; retry</button></div>';
     else body = '<div id="bankHost"></div>';
 
@@ -4169,7 +4383,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     var recHtml = recs.slice(0, 5).map(function (r) { return '<li>' + r + '</li>'; }).join("");
 
     return '<section class="report-sheet" aria-label="Student progress report">' +
-      '<header class="r-header"><div class="r-crest">M</div><div class="r-title-block"><div class="r-eyebrow">Grammar Academy</div><h2 class="r-title">Student Progress Report</h2><div class="r-subtitle">' + subtitle + '</div></div><div class="r-date-col">Report date<br><span class="r-date-val">' + esc(reportDate) + '</span></div></header>' +
+      '<header class="r-header"><div class="r-crest">GA</div><div class="r-title-block"><div class="r-eyebrow">Grammar Academy</div><h2 class="r-title">Student Progress Report</h2><div class="r-subtitle">' + subtitle + '</div></div><div class="r-date-col">Report date<br><span class="r-date-val">' + esc(reportDate) + '</span></div></header>' +
       '<div class="r-ornament"><span class="fleuron">❦</span></div>' +
       '<div class="r-student-info">' +
         '<div class="r-info-cell"><div class="r-info-label">Student</div>' + (privateLabel ? '<div class="r-info-val">' + esc(privateLabel) + '</div><div class="r-info-sub">No. ' + esc(num) + '</div>' : '<div class="r-info-val">Student ' + esc(num) + '</div>') + '</div>' +
@@ -4277,7 +4491,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
         '<button class="btn ghost small" onclick="GA.go(\'#dashboard\')">← Back</button>' +
         '<button class="btn gold small" onclick="GA._printCert()">Print Certificate</button></div>' +
       '<div class="cert-sheet">' +
-        '<div class="cert-crest">M</div>' +
+        '<div class="cert-crest">GA</div>' +
         '<div class="cert-head">Mourad Mekki · Grammar Academy</div>' +
         '<h1 class="cert-title">Certificate of Achievement</h1>' +
         '<p style="font-family:var(--serif-body);font-style:italic;color:var(--ink-soft);margin:8px 0 0">This certificate is awarded to</p>' +
@@ -4348,7 +4562,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       var ctx = this.contextFor(lid); var gradeLabel = ctx ? ctx.grade.label : "";
       var date = new Date().toLocaleDateString("en-GB", { year: "numeric", month: "long", day: "numeric" });
       var self = this;
-      var runhead = '<div class="lp-runhead"><div class="lp-rh-left"><span class="lp-rh-crest">M</span><span class="lp-rh-name">Mourad Mekki &middot; Grammar Academy</span></div><div class="lp-rh-meta">' + esc(L.code) + ' &middot; ' + esc(L.cefr) + '</div></div>';
+      var runhead = '<div class="lp-runhead"><div class="lp-rh-left"><span class="lp-rh-crest">GA</span><span class="lp-rh-name">Mourad Mekki &middot; Grammar Academy</span></div><div class="lp-rh-meta">' + esc(L.code) + ' &middot; ' + esc(L.cefr) + '</div></div>';
       var runfoot = '<div class="lp-runfoot"><span>Prepared by ' + esc(signatureFor().name) + '</span><span class="lp-rf-mid">' + esc(L.title) + (gradeLabel ? ' &middot; ' + esc(gradeLabel) : "") + '</span><span class="lp-rf-orn">\u2766</span></div>';
       var notesBlocks = o.notes ?
         '<div class="lp-section"><div class="lp-h"><span class="lp-h-num">01</span>Explanation</div>' + L.explanation.map(function (p) { return '<p>' + p + '</p>'; }).join("") + '</div>' +
@@ -5049,6 +5263,37 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
 
   GA.go = function (hash) { location.hash = hash; render(); };
 
+  /* ---- First-paint count-up + ring draw-in (dashboard / home). Read-only, motion-safe. ---- */
+  function animateNumbers() {
+    var reduce = false;
+    try { reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (_) {}
+    if (reduce || typeof requestAnimationFrame !== "function") return;
+    var ease = function (t) { return 1 - Math.pow(1 - t, 3); };
+    var nodes = document.querySelectorAll(".dash-stats .stat-value, .ring-center .rc-val, .summary-row .sc-val");
+    Array.prototype.forEach.call(nodes, function (node) {
+      var full = node.innerHTML, m = /^\s*(\d+)/.exec(node.textContent || "");
+      if (!m) return;
+      var target = parseInt(m[1], 10);
+      if (!(target > 0)) return;
+      var suffix = full.replace(/^\s*\d+/, ""), dur = 750,
+          t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+      node.innerHTML = "0" + suffix;
+      (function step(now) {
+        var p = Math.min(1, ((now || Date.now()) - t0) / dur);
+        node.innerHTML = Math.round(target * ease(p)) + suffix;
+        if (p < 1) requestAnimationFrame(step); else node.innerHTML = target + suffix;
+      })(t0);
+    });
+    var ring = document.querySelector(".ring .ring-fg");
+    if (ring) {
+      var r = parseFloat(ring.getAttribute("r")) || 52, C = 2 * Math.PI * r,
+          target = ring.getAttribute("stroke-dashoffset");
+      ring.style.strokeDashoffset = C;
+      void ring.getBoundingClientRect();
+      requestAnimationFrame(function () { ring.style.strokeDashoffset = target; });
+    }
+  }
+
   function render() {
     var h = (location.hash || "#entrance").replace("#", "");
     // ENTRY EXPERIENCE — landing + role/auth come first
@@ -5082,6 +5327,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       if (GA._tab === "practice") mountPractice(GA._lid);
       else if (GA._tab === "official") mountOfficial(GA._lid);
     }
+    if (h === "home" || h === "dashboard") animateNumbers();
   }
 
   function paintNav() {
