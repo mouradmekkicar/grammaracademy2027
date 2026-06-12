@@ -1555,6 +1555,117 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
   .entry-stage,.entry-roles-wrap,.role-grid,.role-entrance,.re-veil,.re-sweep,.re-ph,
   .return-card,.access-stage,.access-card,.auth-form,.auth-tabs{display:none!important}
 }
+
+/* ====================================================================
+   BRIGHTER ACADEMY LAYER (additive · v4) — SCREEN ONLY.
+   Lifts the on-screen experience into a warmer, more cheerful
+   "academy journey" without touching any print / report / certificate
+   rules or any JavaScript logic. New classes + light polish only.
+     · Academy journey strip (Learn → Practise → Mastery → Badge → Report)
+     · Image-placeholder shimmer · Hero & entrance warmth
+     · Practice vs Mastery zone identity · Coming-soon / empty / badge polish
+     · Mobile · reduced-motion · print-hide
+   ==================================================================== */
+
+/* ---- Academy journey strip ---- */
+.aj-strip{position:relative;margin:0 0 var(--sp-6);padding:20px 22px;border-radius:var(--r-xl);
+  background:linear-gradient(135deg,#fff 0%,var(--navy-50) 48%,var(--gold-100) 100%);
+  border:1px solid var(--line);box-shadow:var(--shadow-1);overflow:hidden}
+.aj-strip::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(420px 180px at 8% -20%,rgba(200,154,60,.16),transparent 60%),
+            radial-gradient(420px 220px at 100% 120%,rgba(79,143,219,.12),transparent 60%)}
+.aj-head{position:relative;z-index:1;display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;margin-bottom:16px}
+.aj-kicker{font-family:var(--sans-ui);font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold-700);font-weight:700}
+.aj-head strong{font-family:var(--serif-display);font-size:1.12rem;color:var(--navy-900);font-weight:600}
+.aj-note{font-family:var(--sans-ui);font-size:.74rem;color:var(--muted);margin-left:auto}
+.aj-track{position:relative;z-index:1;list-style:none;margin:0;padding:0;display:flex;gap:10px}
+.aj-step{position:relative;flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;
+  gap:7px;padding:14px 10px 12px;border-radius:var(--r-lg);background:rgba(255,255,255,.72);
+  border:1px solid var(--line);transition:transform var(--t-med) var(--ease),box-shadow var(--t-med) var(--ease),border-color var(--t-med)}
+.aj-step:hover{transform:translateY(-3px);box-shadow:var(--shadow-2)}
+.aj-step:not(:last-child)::after{content:"";position:absolute;top:34px;right:-10px;width:10px;height:2px;
+  background:linear-gradient(90deg,var(--gold-300),var(--line-dark));z-index:0}
+.aj-ic{position:relative;width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
+  background:var(--navy-50);color:var(--navy-600)}
+.aj-ic svg{width:26px;height:26px}
+.aj-tick{position:absolute;right:-5px;bottom:-5px;width:20px;height:20px;border-radius:50%;
+  background:var(--accent-emerald);color:#fff;font-size:.7rem;font-weight:700;display:grid;place-items:center;border:2px solid #fff}
+.aj-body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.aj-n{font-family:var(--sans-ui);font-size:.58rem;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.aj-label{font-family:var(--serif-display);font-size:1.05rem;font-weight:600;color:var(--navy-900);line-height:1.1}
+.aj-desc{font-family:var(--sans-ui);font-size:.72rem;color:var(--ink-soft);line-height:1.35}
+.aj-status{margin-top:3px;font-family:var(--sans-ui);font-size:.6rem;letter-spacing:.8px;text-transform:uppercase;font-weight:700;
+  padding:2px 9px;border-radius:999px;align-self:center;background:var(--navy-50);color:var(--muted)}
+.aj-step.tone-sky .aj-ic{background:var(--accent-sky-soft);color:var(--accent-sky)}
+.aj-step.tone-teal .aj-ic{background:var(--accent-teal-soft);color:var(--accent-teal)}
+.aj-step.tone-amber .aj-ic{background:var(--accent-amber-soft);color:var(--accent-amber)}
+.aj-step.tone-violet .aj-ic{background:var(--accent-violet-soft);color:var(--accent-violet)}
+.aj-step.tone-emerald .aj-ic{background:var(--accent-emerald-soft);color:var(--accent-emerald)}
+.aj-step.is-active{border-color:var(--gold-400);box-shadow:0 0 0 3px rgba(200,154,60,.14)}
+.aj-step.is-active .aj-status{background:var(--gold-100);color:var(--gold-700)}
+.aj-step.is-done .aj-status{background:var(--accent-emerald-soft);color:#2c6e49}
+.aj-step.is-ready .aj-ic{background:var(--accent-emerald-soft);color:var(--accent-emerald)}
+.aj-step.is-ready .aj-status{background:var(--accent-emerald-soft);color:#2c6e49}
+.aj-step.is-locked{opacity:.62}
+.aj-step.is-locked .aj-status{background:var(--navy-50);color:var(--muted)}
+.aj-step.is-active .aj-ic{animation:ajPulse 2.4s var(--ease) infinite}
+@keyframes ajPulse{0%,100%{box-shadow:0 0 0 0 rgba(200,154,60,0)}50%{box-shadow:0 0 0 6px rgba(200,154,60,.16)}}
+
+/* ---- Image placeholder: gentle shimmer so empty slots feel intentional ---- */
+.ga-img .ga-img-ph{overflow:hidden}
+.ga-img .ga-img-ph::before{content:"";position:absolute;inset:-40%;
+  background:conic-gradient(from 0deg,transparent 0deg,rgba(200,154,60,.10) 60deg,transparent 120deg,rgba(79,143,219,.08) 200deg,transparent 280deg);
+  animation:ajSpin 16s linear infinite;z-index:0}
+.ga-img .ga-img-ph>*{position:relative;z-index:1}
+.ga-img .ga-img-ph .placeholder-icon{filter:drop-shadow(0 1px 4px rgba(200,154,60,.4))}
+@keyframes ajSpin{to{transform:rotate(360deg)}}
+
+/* ---- Hero warmth: soft glow behind the title ---- */
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(540px 260px at 88% 12%,rgba(200,154,60,.20),transparent 62%),
+            radial-gradient(420px 220px at 6% 96%,rgba(79,143,219,.16),transparent 60%)}
+
+/* ---- Entrance doors: floating crest + brighter focus glow ---- */
+.role-entrance .ph-crest{animation:ajFloat 5s var(--ease) infinite}
+@keyframes ajFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.role-entrance::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;
+  box-shadow:inset 0 0 0 0 rgba(200,154,60,0);transition:box-shadow .4s var(--ease)}
+.role-entrance:hover::before,.role-entrance:focus-visible::before{box-shadow:inset 0 0 0 2px rgba(232,207,154,.6)}
+
+/* ---- Zone identity: practice (teal, friendly) vs mastery (gold, official) ---- */
+#bankHost .bank-meter{border-left:3px solid var(--accent-teal)}
+#bankHost .bank-meter.official-meter{border-left-color:var(--accent-amber)}
+
+/* ---- Coming-soon: gentler, more inviting ---- */
+.soon-card{transition:opacity var(--t-med) var(--ease),box-shadow var(--t-med) var(--ease),transform var(--t-med) var(--ease)}
+.soon-card:hover{opacity:1;transform:translateY(-2px);box-shadow:var(--shadow-2)}
+.soon-ribbon{background:linear-gradient(180deg,var(--accent-violet),#6354a8)}
+
+/* ---- Empty states: warmer framing ---- */
+.empty-state .ga-img{border-style:dashed}
+
+/* ---- Badge cabinet: earned medals get a soft ring of light ---- */
+.badge-item.earned .badge-medal{box-shadow:0 0 0 4px rgba(200,154,60,.18),0 4px 14px rgba(138,106,32,.3)}
+
+/* ---- Mobile: journey strip becomes a clean vertical stack ---- */
+@media(max-width:760px){
+  .aj-note{margin-left:0;flex-basis:100%}
+  .aj-track{flex-direction:column;gap:8px}
+  .aj-step{flex-direction:row;align-items:center;text-align:left;gap:14px;padding:12px 14px}
+  .aj-step:not(:last-child)::after{top:auto;right:auto;left:36px;bottom:-8px;width:2px;height:8px;
+    background:linear-gradient(180deg,var(--gold-300),var(--line-dark))}
+  .aj-ic{flex:0 0 auto}
+  .aj-body{align-items:flex-start}
+  .aj-status{align-self:flex-start}
+}
+
+/* ---- Reduced motion ---- */
+@media(prefers-reduced-motion:reduce){
+  .aj-step.is-active .aj-ic,.ga-img .ga-img-ph::before,.role-entrance .ph-crest{animation:none!important}
+}
+
+/* ---- Print: the journey strip is a screen-only guide ---- */
+@media print{ .aj-strip{display:none!important} }
 </style>
 </head>
 <body>
@@ -2131,6 +2242,61 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
     return { correct: correct, total: bank.length, pct: bank.length ? Math.round(correct / bank.length * 100) : 0 };
   }
 
+  /* ---- Academy journey strip (Learn → Practise → Mastery → Badge → Report)
+     Read-only: status is derived purely from real progress, never invented.
+     Renders the whole-journey position so students always know where they are.
+     Print-hidden via CSS (.aj-strip). ---- */
+  function journeyStrip(pw, opts) {
+    opts = opts || {};
+    var attempted = 0, mastered = false, badges = 0, learnedSome = false, pathwayMaster = false;
+    if (pw && session.num) {
+      var m = buildStudentModel(session.num, pw.term, pw.grade, pw.stream);
+      attempted = Object.keys(m.scores).length;
+      mastered = Object.keys(m.scores).some(function (k) { return m.scores[k].official; });
+      badges = m.badges.length;
+      learnedSome = m.completedLessons.length > 0;
+      pathwayMaster = m.pathwayMaster;
+    }
+    var practised = attempted > 0;
+    function st(stage) {
+      if (stage === "learn") return pathwayMaster ? "done" : ((learnedSome || practised) ? "active" : "start");
+      if (stage === "practise") return practised ? (mastered ? "done" : "active") : "start";
+      if (stage === "mastery") return mastered ? "done" : (practised ? "active" : "start");
+      if (stage === "badge") return badges > 0 ? "done" : "start";
+      if (stage === "report") return mastered ? "ready" : "locked";
+      return "start";
+    }
+    var ICN = {
+      learn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h7v15H6a2 2 0 0 0-2 2z"/><path d="M20 5a2 2 0 0 0-2-2h-5v15h5a2 2 0 0 1 2 2z"/></svg>',
+      practise: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 9 9"/><path d="M3 12v5h5"/><path d="m9 12 2 2 4-4"/></svg>',
+      mastery: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+      badge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="m9 13-2 8 5-3 5 3-2-8"/></svg>',
+      report: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="M9 14h6M9 17h4"/></svg>'
+    };
+    var STEPS = [
+      { k: "learn", tone: "sky", n: "1", label: "Learn", desc: "Study the rule & examples." },
+      { k: "practise", tone: "teal", n: "2", label: "Practise", desc: "Try as many times as you need." },
+      { k: "mastery", tone: "amber", n: "3", label: "Mastery Test", desc: "Submit once \u2014 this score is saved." },
+      { k: "badge", tone: "violet", n: "4", label: "Badge", desc: "Honours unlock as you master lessons." },
+      { k: "report", tone: "emerald", n: "5", label: "Report", desc: "Unlock your progress report." }
+    ];
+    var WORD = { done: "Completed", active: "In progress", start: "Available", ready: "Ready", locked: "Locked" };
+    var nodes = STEPS.map(function (s) {
+      var state = st(s.k);
+      var tick = (state === "done") ? '<span class="aj-tick" aria-hidden="true">\u2713</span>' : "";
+      return '<li class="aj-step tone-' + s.tone + ' is-' + state + '">' +
+        '<span class="aj-ic" aria-hidden="true">' + ICN[s.k] + tick + '</span>' +
+        '<span class="aj-body"><span class="aj-n">Step ' + s.n + '</span>' +
+        '<span class="aj-label">' + s.label + '</span>' +
+        '<span class="aj-desc">' + s.desc + '</span>' +
+        '<span class="aj-status">' + WORD[state] + '</span></span></li>';
+    }).join("");
+    return '<section class="aj-strip" aria-label="Academy journey: Learn, Practise, Mastery Test, Badge, Report">' +
+      '<div class="aj-head"><span class="aj-kicker">The journey</span><strong>' + esc(opts.title || "Your academy journey") + '</strong>' +
+      '<span class="aj-note">Practise safely \u2014 your mastery score is the one saved to your report.</span></div>' +
+      '<ol class="aj-track">' + nodes + '</ol></section>';
+  }
+
   /* ---------- VIEWS ---------------------------------------------------- */
   var Views = {};
 
@@ -2235,7 +2401,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
         '<div style="margin-top:10px"><button class="btn ghost small sentence" disabled aria-disabled="true">Not available yet</button></div></div>';
     }).join("");
 
-    return '<div class="page">' + hero + cont + summary +
+    return '<div class="page">' + hero + journeyStrip(lastPw, { title: "Learn \u00b7 Practise \u00b7 Master \u00b7 Earn \u00b7 Report" }) + cont + summary +
       '<div id="termCards"><div class="eyebrow">Available pathways</div><h2 style="margin-bottom:14px">Choose your term</h2>' +
       '<div class="grid cols-3">' + cards + '</div></div></div>';
   };
@@ -2394,6 +2560,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<div class="lesson-head">' + topicIcon(L, 48, tab === "official" ? "amber" : tab === "practice" ? "teal" : "sky", L.title + " topic icon") +
       '<div class="lh-body"><div class="meta-row"><span class="tag code">' + esc(L.code) + '</span><span class="tag">' + esc(L.cefr) + '</span><span class="tag">' + esc(L.moeSlo) + '</span></div>' +
       '<h1 style="margin-top:10px">' + esc(L.title) + '</h1><p class="section-sub" style="margin-bottom:0">' + esc(L.chapter) + ' \u00b7 ' + esc(L.week) + '</p>' + statusRow + '</div></div>' +
+      journeyStrip(p, { title: "Where you are in the journey" }) +
       seq +
       '<div style="margin:10px 0 14px"><button class="btn ghost small sentence" onclick="GA._printThisLesson(\'' + lid + '\')">Print worksheet</button> <button class="btn ghost small sentence" onclick="GA.go(\'#lessons\')">Back to pathway</button></div>' + body + '</div>';
   };
@@ -2782,6 +2949,7 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
 
     return '<div class="page"><div class="crumb"><a onclick="GA.go(\'#home\')">Terms</a><span class="sep">›</span><a onclick="GA._setStream(\'' + pick.grade + '\',\'' + pick.stream + '\')">' + esc(pw.streamLabel) + '</a><span class="sep">›</span>My Progress</div>' +
       banner +
+      journeyStrip(pw, { title: "My academy journey" }) +
       '<div class="ring-wrap">' + ring + ringSide + '</div>' +
       stats + emptyBlock +
       '<div class="dash-grid"><div><div class="panel"><h3><span class="panel-dot"></span>Mastery map</h3><div class="mastery-grid">' + cells + '</div></div>' + recoPanel + '</div>' +
