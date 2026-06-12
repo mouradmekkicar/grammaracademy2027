@@ -4166,9 +4166,15 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
   GA._prefillStudent = function (u, n) {
     if (el("csUser")) el("csUser").value = stripNs(u);
     if (el("csNum")) el("csNum").value = n;
-    if (el("csCode")) { el("csCode").value = ""; el("csCode").focus(); }
-    if (el("csErr")) { el("csErr").textContent = "Enter a new login code, then Issue / update."; el("csErr").style.color = "var(--muted)"; }
+    if (el("csCode")) { el("csCode").value = ""; try { el("csCode").scrollIntoView({ behavior: "smooth", block: "center" }); } catch (_) {} el("csCode").focus(); }
+    if (el("csErr")) { el("csErr").textContent = "Reset for " + stripNs(u) + " (#" + n + "): type a new login code, then Issue / update."; el("csErr").style.color = "var(--navy-700)"; }
   };
+
+  // Safe argument for a single-quoted JS string inside a double-quoted HTML attribute.
+  function rosterArg(s) {
+    s = String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
 
   GA._loadCloudRoster = async function () {
     var box = el("ga-cloud-roster"); if (!box) return;
@@ -4184,7 +4190,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
     var rows = r.rows.map(function (s) {
       var num = String(s.student_number), user = String(s.username), nm = TeacherNotes.get(TID, num);
       return '<tr><td>' + (nm ? esc(nm) : '<span style="color:var(--muted)">\u2014</span>') + '</td><td><strong>' + esc(num) + '</strong></td><td>' + esc(user) + '</td>' +
-        '<td><button class="btn ghost small" onclick="GA._prefillStudent(' + JSON.stringify(user) + ',' + JSON.stringify(num) + ')">Reset code</button></td></tr>';
+        '<td><button class="btn ghost small" onclick="GA._prefillStudent(\'' + rosterArg(user) + '\',\'' + rosterArg(num) + '\')">Reset code</button></td></tr>';
     }).join("");
     box.innerHTML = '<div class="card" style="padding:0;overflow:auto;margin:0"><table class="student-list">' +
       '<tr><th>Name</th><th>Student #</th><th>Username</th><th></th></tr>' + rows + '</table></div>';
@@ -4742,8 +4748,16 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
       if (!cfg.url || !cfg.key || !window.supabase || !window.supabase.createClient) { ready = false; return false; }
       try {
         client = window.supabase.createClient(cfg.url, cfg.key, {
-          auth: { persistSession: true, autoRefreshToken: true, storageKey: "mm_grammar_sb_auth" }
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: "mm_grammar_sb_auth" }
         });
+        // When the teacher arrives via a password-reset email link, Supabase parses
+        // the recovery token from the URL and fires PASSWORD_RECOVERY. Route them to
+        // the in-app "set a new password" screen so the link actually completes.
+        try {
+          client.auth.onAuthStateChange(function (event) {
+            if (event === "PASSWORD_RECOVERY") { GA._recoveryActive = true; try { GA.go("#recover"); } catch (_) {} }
+          });
+        } catch (_) {}
         ready = true;
       } catch (_) { ready = false; }
       return ready;
@@ -4805,8 +4819,22 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
       },
       forgotPassword: async function (email) {
         if (!init()) return null;
-        try { await client.auth.resetPasswordForEmail(email); } catch (_) {}
+        try {
+          var opts = {};
+          // Send the teacher back to THIS app to finish the reset (must be allow-listed
+          // in Supabase → Authentication → URL Configuration). Skipped on file:// builds.
+          if (/^https?:$/.test(location.protocol)) opts.redirectTo = location.origin + location.pathname;
+          await client.auth.resetPasswordForEmail(email, opts);
+        } catch (_) {}
         return { ok: true, message: "If an account exists for this email, a reset link will be sent. Please check your inbox and spam or junk folder." };
+      },
+      updatePassword: async function (newPassword) {
+        if (!init()) return null;
+        try {
+          var r = await client.auth.updateUser({ password: newPassword });
+          if (r.error) return { ok: false, error: r.error.message };
+          return { ok: true };
+        } catch (_) { return offlineErr(); }
       },
 
       /* ---- student RPCs (code re-validated each call) ---- */
@@ -5193,6 +5221,35 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
       '</section></div></div>';
   };
 
+  /* ---------- view: set a new password (password-recovery link) -------- */
+  Views.recover = function () {
+    return '<div class="access-stage"><div class="page ultra-narrow">' +
+      '<section class="card access-card teacher" aria-label="Set a new password">' +
+        '<div class="role-icon" aria-hidden="true">' + ICON_TEACHER + '</div>' +
+        '<h2>Set a new password</h2><p class="role-sub">Choose a new password for your Grammar Academy teacher account.</p>' +
+        '<div class="auth-form">' +
+          '<label class="fld" for="rpPass">New password</label>' +
+          '<input class="txt" id="rpPass" type="password" autocomplete="new-password" placeholder="At least 6 characters">' +
+          '<label class="fld" for="rpPass2">Confirm new password</label>' +
+          '<input class="txt" id="rpPass2" type="password" autocomplete="new-password" onkeydown="if(event.key===\'Enter\'){GA._setNewPassword()}">' +
+          '<div class="auth-error" id="rpErr"></div>' +
+          '<button class="btn gold" type="button" onclick="GA._setNewPassword()">Save new password</button>' +
+          '<p class="auth-note">Open this page from the reset link in your email. If this screen appears blank or expired, request a new link from the login page.</p>' +
+        '</div></section></div></div>';
+  };
+  GA._setNewPassword = async function () {
+    var p1 = (el("rpPass") && el("rpPass").value) || "", p2 = (el("rpPass2") && el("rpPass2").value) || "";
+    if (p1.length < 6) return setAuthErr("rpErr", "Choose a password of at least 6 characters.");
+    if (p1 !== p2) return setAuthErr("rpErr", "The two passwords don't match.");
+    var r = await GA.cloud.updatePassword(p1);
+    if (r == null) return setAuthErr("rpErr", "This reset link could not be verified. Please request a new one from the login page.");
+    if (!r.ok) { setAuthErr("rpErr", r.error || "Couldn't update the password. The link may have expired."); try { if (GA.fx) GA.fx.play("warn"); } catch (_) {} return; }
+    setAuthErr("rpErr", "Password updated. Redirecting you to sign in\u2026", true);
+    GA._recoveryActive = false;
+    try { if (GA.fx) GA.fx.play("success"); } catch (_) {}
+    setTimeout(function () { GA._authTab = "login"; GA.go("#access-teacher"); }, 1300);
+  };
+
   /* ---------- tab + handlers ------------------------------------------ */
   GA._authTab = "login";
   GA._teacherTab = function (which) {
@@ -5300,6 +5357,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
     if (h === "entrance") { setEntryMode(true); el("view").innerHTML = Views.entrance(); paintNav(); return; }
     if (h === "access-student") { setEntryMode(true); el("view").innerHTML = Views.studentAccess(); paintNav(); setTimeout(function () { GA._focus("sUser"); }, 30); return; }
     if (h === "access-teacher") { setEntryMode(true); el("view").innerHTML = Views.teacherAccess(); paintNav(); setTimeout(function () { GA._focus(GA._authTab === "signup" ? "tsName" : (GA._authTab === "forgot" ? "tfEmail" : "tlEmail")); }, 30); return; }
+    if (h === "recover") { setEntryMode(true); el("view").innerHTML = Views.recover(); paintNav(); setTimeout(function () { GA._focus("rpPass"); }, 30); return; }
     setEntryMode(false);
     // teacher dashboard + peek are always reachable (auth handled inside the views)
     if (h === "teacher") { el("view").innerHTML = Views.teacher(); paintNav(); if (GA._loadCloudRoster) GA._loadCloudRoster(); if (GA.cloud.enabled() && !GA._classSyncedOnce) { GA._classSyncedOnce = true; GA._syncClassProgress(); } return; }
@@ -5374,6 +5432,11 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
 
   window.addEventListener("hashchange", render);
   render();
+  // If opened from a password-reset email link, bring the cloud client up so it can
+  // parse the recovery token and route the teacher to the "set new password" screen.
+  try {
+    if (/(?:[#&])(?:access_token=|type=recovery)/.test(location.hash || "")) { GA.cloud.enabled(); }
+  } catch (_) {}
   console.log("[GA] engine ready · " + Object.keys(GA.registry.lessons).length + " lesson(s) across " +
     Object.keys(GA.registry.pathways).length + " pathway(s)");
 })();
