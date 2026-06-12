@@ -3066,7 +3066,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
     var res = gradeBank(host, live.bank, live.st, true);
     var lp = lessonProgress(session.num, pick.term, lid);
     var prev = lp.rec.practice ? lp.rec.practice.bestPct : 0;
-    lp.rec.practice = { bestPct: Math.max(prev, res.pct), lastPct: res.pct, attempts: (lp.rec.practice ? lp.rec.practice.attempts : 0) + 1, lastAt: Date.now() };
+    lp.rec.practice = { bestPct: Math.max(prev, res.pct), lastPct: res.pct, attempts: (lp.rec.practice ? lp.rec.practice.attempts : 0) + 1, lastAt: Date.now(), g: pick.grade, sm: pick.stream };
     store.save(lp.d);
     if (GA.cloud && GA.cloud.enabled()) GA.cloud.queueProgress(pick.term, lid, lp.rec.practice, lp.rec.official);
   };
@@ -3088,7 +3088,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
     var lp = lessonProgress(session.num, pick.term, lid);
     var prevOff = lp.rec.official || null;
 
-    var attempt = { submitted: true, correct: res.correct, total: res.total, pct: res.pct, at: Date.now(), answers: live.st };
+    var attempt = { submitted: true, correct: res.correct, total: res.total, pct: res.pct, at: Date.now(), answers: live.st, g: pick.grade, sm: pick.stream };
     if (isRetake && prevOff && prevOff.submitted) {
       // Retake policy: latest valid attempt is COUNTED; first attempt kept for teacher review; retake consumed.
       attempt.firstAttempt = prevOff.firstAttempt || {
@@ -3190,6 +3190,17 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
     { id:"academy_elite", name:"Academy Elite", tier:"diamond", req:"Complete entire pathway",check:function(s){return s.pathwayMaster;} }
   ];
 
+  // Grade-level scoping: a saved attempt only counts toward the pathway it was
+  // actually earned in. Each record carries the grade/stream it was taken under
+  // (g/sm); legacy records saved before this (no g) are grandfathered so no
+  // existing progress is lost. This stops practice done outside the student's
+  // grade level from appearing in his report or the teacher's dashboard.
+  function inGrade(sub, grade, stream) {
+    if (!sub || sub.g == null) return true;
+    if (String(sub.g) !== String(grade)) return false;
+    return sub.sm == null || String(sub.sm) === String(stream);
+  }
+
   // Derive a monolith-shaped student model for one pathway from store + registry.
   // Per-lesson score = official.pct (if submitted) else practice.bestPct (if practised) else none.
   function buildStudentModel(num, term, grade, stream) {
@@ -3203,8 +3214,8 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
     allLessons.forEach(function (lid) {
       var rec = prog[lid]; if (!rec) return;
       var pct = null, attempts = 0, official = false;
-      if (rec.official && rec.official.submitted) { pct = rec.official.pct; attempts = 1; official = true; }
-      else if (rec.practice) { pct = rec.practice.bestPct; attempts = rec.practice.attempts || 1; }
+      if (rec.official && rec.official.submitted && inGrade(rec.official, grade, stream)) { pct = rec.official.pct; attempts = 1; official = true; }
+      else if (rec.practice && inGrade(rec.practice, grade, stream)) { pct = rec.practice.bestPct; attempts = rec.practice.attempts || 1; }
       if (pct === null) return;
       model.scores[lid] = { pct: pct, attempts: attempts, official: official };
       pcts.push(pct);
@@ -3462,7 +3473,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
     '.now-viewing .nv-sub{font-family:var(--sans-ui);font-size:.76rem;color:var(--muted);margin-top:2px}' +
     '</style>';
 
-  function pathwaySubmissions(term, lessonIds) {
+  function pathwaySubmissions(term, grade, stream, lessonIds) {
     var d = store.load(), set = {}, out = [];
     lessonIds.forEach(function (l) { set[l] = 1; });
     Object.keys(d.students || {}).forEach(function (num) {
@@ -3470,14 +3481,14 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
       Object.keys(prog).forEach(function (lid) {
         if (!set[lid]) return;
         var o = prog[lid].official;
-        if (o && o.submitted) out.push({ num: num, lid: lid, pct: o.pct, correct: o.correct, total: o.total, at: o.at });
+        if (o && o.submitted && inGrade(o, grade, stream)) out.push({ num: num, lid: lid, pct: o.pct, correct: o.correct, total: o.total, at: o.at });
       });
     });
     return out.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
   }
 
-  function submissionsCard(term, lessonIds) {
-    var subs = pathwaySubmissions(term, lessonIds);
+  function submissionsCard(term, grade, stream, lessonIds) {
+    var subs = pathwaySubmissions(term, grade, stream, lessonIds);
     var rows = subs.length ? subs.map(function (s) {
       var L = GA.registry.lessons[s.lid];
       return '<tr><td>' + studentTag(s.num) + '</td><td>' + esc(L ? L.title : s.lid) + '</td><td class="m-mini ' + bandClass(s.pct) + '">' + s.correct + '/' + s.total + ' (' + s.pct + '%)</td><td>' + fmtDate(s.at) + '</td></tr>';
@@ -3790,7 +3801,7 @@ body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;op
     var intervCard = '<h3 style="margin:28px 0 10px">Suggested intervention groups</h3><div class="card">' + interv + '</div>';
 
     return head + PW_ANALYTICS_STYLE + nowViewing +
-      submissionsCard(teacher.term, allLessons) +
+      submissionsCard(teacher.term, teacher.grade, teacher.stream, allLessons) +
       classProgressCard(roster, allLessons) +
       byLessonCard(roster, allLessons) +
       rosterCard + intervCard +
