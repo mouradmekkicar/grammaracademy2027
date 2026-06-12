@@ -1720,8 +1720,10 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
 .pchip{font-family:var(--sans-ui);font-size:.74rem;letter-spacing:.6px;font-weight:600;color:var(--navy-800);
   background:var(--white);border:1px solid var(--line-dark);border-radius:999px;padding:7px 16px;box-shadow:var(--shadow-1)}
 .pchip.flag{display:inline-flex;align-items:center;gap:8px;color:var(--navy-900)}
-.pchip.flag .flag-stripe{width:18px;height:12px;border-radius:2px;
-  background:linear-gradient(90deg,#00732f 0 25%,#fff 25% 50%,#000 50% 75%,#ce1126 75% 100%)}
+.pchip.flag .flag-stripe{width:18px;height:12px;border-radius:2px;overflow:hidden;
+  background:
+    linear-gradient(90deg,#ce1126 0 27%,transparent 27%),
+    linear-gradient(180deg,#00732f 0 33.34%,#fff 33.34% 66.67%,#000 66.67% 100%)}
 
 /* Instruction */
 .portal-instruct{font-family:var(--sans-ui);font-size:.76rem;letter-spacing:2px;text-transform:uppercase;
@@ -4827,21 +4829,20 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<div class="portal-glyphs" aria-hidden="true"><span>?</span><span>!</span><span>\u201C</span><span>;</span><span>\u2014</span><span>.</span></div>' +
       '<div class="portal-inner">' +
         '<header class="portal-brand">' +
-          '<span class="pb-name">Mourad Mekki</span><span class="pb-dot" aria-hidden="true"></span>' +
           '<span class="pb-loc">United Arab Emirates</span>' +
         '</header>' +
         '<div class="portal-hero">' +
           '<div class="eyebrow portal-eyebrow">Your Grammar Learning Academy</div>' +
           '<h1 class="portal-title">Grammar Academy</h1>' +
           '<p class="portal-sub">Learn. Practise. Master.</p>' +
-          '<p class="portal-support">Vocabulary &amp; Grammar \u2014 Aligned to UAE Ministry of Education Curricula</p>' +
+          '<p class="portal-support">Grammar \u2014 Aligned to UAE Ministry of Education Curricula</p>' +
           '<div class="portal-chips">' +
             '<span class="pchip flag" aria-label="United Arab Emirates"><span class="flag-stripe" aria-hidden="true"></span>UAE</span>' +
             '<span class="pchip">2026\u20132027 Academic Year \u00b7 Grammar Academy</span>' +
           '</div>' +
         '</div>' +
         ret +
-        '<p class="portal-instruct">Select your academy path to begin</p>' +
+        '<p class="portal-instruct">Select your role to begin</p>' +
         '<div class="role-grid">' + entranceCard("teacher") + entranceCard("student") + '</div>' +
         '<footer class="portal-foot">' +
           '<div class="pf-line">\u00a9 2026 Mourad Mekki</div>' +
