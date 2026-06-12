@@ -1666,6 +1666,125 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
 
 /* ---- Print: the journey strip is a screen-only guide ---- */
 @media print{ .aj-strip{display:none!important} }
+
+/* ====================================================================
+   GRAMMAR ACADEMY ENTRY PORTAL (additive · v5) — SCREEN ONLY.
+   A premium opening portal: branding · cinematic hero · academic-year
+   chip · role cards · returning-user card · first-visit welcome modal.
+   Reuses the existing role-entrance cards + auth flow untouched.
+     · Entry Hero · Entry Role Cards · Returning User Card
+     · Teacher / Welcome modal · Entry Image Placeholders · Entry Mobile Polish
+   ==================================================================== */
+.entry-stage.portal{position:relative;overflow:hidden;align-items:start;padding:0 16px 40px;
+  min-height:calc(100vh - 70px);
+  background:
+    radial-gradient(900px 480px at 50% -8%,rgba(200,154,60,.16),transparent 60%),
+    radial-gradient(720px 520px at 12% 30%,rgba(30,50,96,.08),transparent 55%),
+    radial-gradient(720px 520px at 90% 22%,rgba(79,143,219,.08),transparent 55%)}
+
+/* Entry Image Placeholders — optional full-bleed backdrop (assets/grammar-academy-entry.webp).
+   Invisible if the file is absent; the CSS gradient/glyphs always carry the scene. */
+.portal-bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.portal-bg img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s var(--ease)}
+.portal-bg.has-img img{opacity:.18}
+.portal-bg.has-img::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(253,250,243,.55),rgba(250,246,238,.86))}
+
+/* floating grammar glyphs */
+.portal-glyphs{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.portal-glyphs span{position:absolute;font-family:var(--serif-display);color:rgba(30,50,96,.07);
+  font-size:clamp(48px,9vw,120px);font-weight:600;animation:glyphFloat 9s ease-in-out infinite}
+.portal-glyphs span:nth-child(1){top:9%;left:7%;animation-delay:0s}
+.portal-glyphs span:nth-child(2){top:60%;left:10%;animation-delay:1.2s;color:rgba(200,154,60,.11)}
+.portal-glyphs span:nth-child(3){top:16%;right:9%;animation-delay:.6s;color:rgba(200,154,60,.11)}
+.portal-glyphs span:nth-child(4){top:68%;right:8%;animation-delay:1.8s}
+.portal-glyphs span:nth-child(5){top:40%;left:47%;animation-delay:2.4s;color:rgba(79,143,219,.07)}
+.portal-glyphs span:nth-child(6){bottom:7%;left:45%;animation-delay:.9s}
+@keyframes glyphFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-16px) rotate(3deg)}}
+
+.portal-inner{position:relative;z-index:2;width:100%;max-width:980px;margin:0 auto;
+  padding:clamp(20px,4vw,40px) 4px 36px;display:flex;flex-direction:column;align-items:center;text-align:center;
+  animation:portalIn .6s var(--ease) both}
+@keyframes portalIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* Entry Hero */
+.portal-brand{display:flex;align-items:center;gap:12px;margin:6px 0 26px;font-family:var(--sans-ui)}
+.portal-brand .pb-name{font-weight:700;letter-spacing:.5px;color:var(--navy-900);font-size:.94rem}
+.portal-brand .pb-dot{width:5px;height:5px;border-radius:50%;background:var(--gold-500)}
+.portal-brand .pb-loc{font-size:.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--gold-700);font-weight:600}
+.portal-eyebrow{justify-content:center;margin-bottom:10px}
+.portal-title{font-size:clamp(2.6rem,7vw,4.5rem);line-height:1.02;letter-spacing:.5px;color:var(--navy-900);margin:0 0 6px}
+.portal-sub{font-family:var(--serif-display);font-size:clamp(1.2rem,3vw,1.8rem);color:var(--gold-700);font-weight:600;letter-spacing:1.2px;margin:0 0 10px}
+.portal-support{font-family:var(--sans-ui);font-size:.92rem;color:var(--ink-soft);max-width:560px;margin:0 auto 18px;line-height:1.55}
+.portal-chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:30px}
+.pchip{font-family:var(--sans-ui);font-size:.74rem;letter-spacing:.6px;font-weight:600;color:var(--navy-800);
+  background:var(--white);border:1px solid var(--line-dark);border-radius:999px;padding:7px 16px;box-shadow:var(--shadow-1)}
+.pchip.flag{display:inline-flex;align-items:center;gap:8px;color:var(--navy-900)}
+.pchip.flag .flag-stripe{width:18px;height:12px;border-radius:2px;
+  background:linear-gradient(90deg,#00732f 0 25%,#fff 25% 50%,#000 50% 75%,#ce1126 75% 100%)}
+
+/* Instruction */
+.portal-instruct{font-family:var(--sans-ui);font-size:.76rem;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);font-weight:600;margin:6px 0 18px}
+.portal-instruct::before,.portal-instruct::after{content:"";display:inline-block;width:26px;height:1px;
+  background:var(--line-dark);vertical-align:middle;margin:0 12px}
+
+/* Entry Role Cards (reuse .role-grid / .role-entrance; slightly larger frame in portal) */
+.entry-stage.portal .role-grid{width:100%;max-width:860px}
+.entry-stage.portal .return-card{margin-bottom:24px}
+
+/* Entry footer */
+.portal-foot{margin-top:34px;display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--sans-ui)}
+.portal-foot .pf-line{font-size:.82rem;color:var(--ink-soft);font-weight:600}
+.portal-foot .pf-sub{font-size:.74rem;color:var(--muted)}
+.portal-report{margin-top:8px;background:transparent;border:1px solid var(--line-dark);border-radius:999px;
+  font-family:var(--sans-ui);font-size:.72rem;letter-spacing:.4px;color:var(--navy-700);padding:6px 15px;
+  cursor:pointer;text-decoration:none;transition:all var(--t-fast) var(--ease)}
+.portal-report:hover{border-color:var(--gold-400);background:var(--gold-100);color:var(--gold-700)}
+
+/* Welcome modal */
+.welcome-veil{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:20px;
+  background:rgba(14,27,58,.5);backdrop-filter:blur(4px);animation:veilIn .25s var(--ease) both}
+.welcome-veil.closing{animation:veilOut .2s var(--ease) forwards}
+@keyframes veilIn{from{opacity:0}to{opacity:1}}
+@keyframes veilOut{to{opacity:0}}
+.welcome-card{position:relative;width:100%;max-width:440px;background:var(--paper);border:1px solid var(--gold-300);
+  border-radius:var(--r-xl);padding:30px 26px 26px;text-align:center;box-shadow:var(--shadow-3);animation:cardPop .35s var(--ease) both}
+@keyframes cardPop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.welcome-x{position:absolute;top:12px;right:14px;background:none;border:none;cursor:pointer;font-size:1rem;color:var(--muted);padding:4px}
+.welcome-x:hover{color:var(--ink)}
+.welcome-card h2{font-size:1.45rem;margin-bottom:4px}
+.welcome-crest{width:60px;height:60px;margin:0 auto 12px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 32% 30%,var(--gold-400),var(--gold-600));color:var(--navy-900);border:1px solid var(--gold-700)}
+.welcome-lead{font-family:var(--sans-ui);font-size:.88rem;color:var(--ink-soft);margin:0 0 18px}
+.welcome-roles{display:grid;gap:12px;margin-bottom:16px}
+.welcome-role{display:flex;flex-direction:column;align-items:center;gap:2px;padding:16px 14px;cursor:pointer;
+  background:var(--white);border:1.5px solid var(--line);border-radius:var(--r-lg);transition:all var(--t-fast) var(--ease)}
+.welcome-role .wr-ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--navy-50);color:var(--navy-700);margin-bottom:4px}
+.welcome-role .wr-main{font-family:var(--serif-display);font-weight:600;font-size:1.1rem;color:var(--navy-900)}
+.welcome-role .wr-sub{font-family:var(--sans-ui);font-size:.78rem;color:var(--muted)}
+.welcome-role:hover{border-color:var(--gold-400);transform:translateY(-2px);box-shadow:var(--shadow-1)}
+.welcome-role.sel{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,60,.16);background:var(--gold-100)}
+.welcome-role.sel .wr-ic{background:var(--gold-400);color:var(--navy-900)}
+.welcome-privacy{display:flex;gap:8px;font-family:var(--sans-ui);font-size:.74rem;color:var(--muted);line-height:1.45;
+  background:var(--navy-50);border-radius:var(--r-md);padding:10px 12px;margin:0 0 16px;text-align:left}
+.welcome-go{width:100%}
+.welcome-go:disabled{opacity:.5;cursor:not-allowed}
+
+/* Entry Mobile Polish */
+@media(max-width:680px){
+  .portal-inner{padding-top:18px}
+  .portal-brand{margin-bottom:18px}
+  .portal-chips{margin-bottom:22px}
+  .portal-glyphs span{font-size:clamp(40px,16vw,72px)}
+  .portal-foot{margin-top:26px}
+}
+@media(prefers-reduced-motion:reduce){
+  .portal-glyphs span,.portal-inner,.welcome-card,.welcome-veil{animation:none!important}
+}
+@media print{
+  .entry-stage.portal,.portal-inner,.portal-glyphs,.portal-bg,.portal-foot,.welcome-veil{display:none!important}
+}
 </style>
 </head>
 <body>
@@ -4690,10 +4809,10 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
       '<span class="rc-badge" aria-hidden="true">' + (isT ? ICON_TEACHER : ICON_STUDENT) + '</span>' +
       '<div class="rc-body"><div class="rc-kicker">Welcome back</div>' +
         '<h2>Welcome back, ' + name + '</h2>' +
-        '<p>' + (isT ? "Click to return to your teacher workspace." : "Click to continue learning.") + '</p>' +
+        '<p>' + (isT ? "Open your Teacher Command Center." : "Continue your Grammar Academy journey.") + '</p>' +
         '<div class="rc-actions">' +
-          '<button class="btn gold" type="button" onclick="GA.continueRememberedUser()">' + (isT ? "Continue as Teacher" : "Continue as Student") + '</button>' +
-          '<button class="btn ghost small" type="button" onclick="GA._dismissReturnCard()">Not you? Choose another role</button>' +
+          '<button class="btn gold" type="button" onclick="GA.continueRememberedUser()">' + (isT ? "Open Teacher Command Center" : "Continue My Grammar Journey") + '</button>' +
+          '<button class="btn ghost small" type="button" onclick="GA._dismissReturnCard()">Change path</button>' +
         '</div></div>' +
       '<button class="rc-forget" type="button" onclick="GA._forgetUser()" aria-label="Forget this user">Forget this user</button>' +
     '</section>';
@@ -4701,12 +4820,83 @@ select.txt:focus{border-color:var(--gold-500);box-shadow:0 0 0 3px rgba(200,154,
   Views.entrance = function () {
     var u = getRememberedUser();
     var ret = (u && !GA._dismissReturn) ? returnCardHtml(u) : "";
-    return '<div class="entry-stage"><div class="entry-roles-wrap">' +
-      '<div class="access-head"><div class="eyebrow">Welcome</div><h1>Grammar Academy</h1>' +
-        '<p class="section-sub" style="margin-left:auto;margin-right:auto">Choose your learning space and enter the academy.</p></div>' +
-      ret +
-      '<div class="role-grid">' + entranceCard("teacher") + entranceCard("student") + '</div>' +
-    '</div></div>';
+    var modal = (!u && !GA._entryWelcomed() && !GA._welcomeDismissed) ? welcomeModalHtml() : "";
+    return '<div class="entry-stage portal">' +
+      '<div class="portal-bg" aria-hidden="true"><img src="assets/grammar-academy-entry.webp" alt="" ' +
+        'onload="this.parentNode.classList.add(\'has-img\')" onerror="this.style.display=\'none\'"></div>' +
+      '<div class="portal-glyphs" aria-hidden="true"><span>?</span><span>!</span><span>\u201C</span><span>;</span><span>\u2014</span><span>.</span></div>' +
+      '<div class="portal-inner">' +
+        '<header class="portal-brand">' +
+          '<span class="pb-name">Mourad Mekki</span><span class="pb-dot" aria-hidden="true"></span>' +
+          '<span class="pb-loc">United Arab Emirates</span>' +
+        '</header>' +
+        '<div class="portal-hero">' +
+          '<div class="eyebrow portal-eyebrow">Your Grammar Learning Academy</div>' +
+          '<h1 class="portal-title">Grammar Academy</h1>' +
+          '<p class="portal-sub">Learn. Practise. Master.</p>' +
+          '<p class="portal-support">Vocabulary &amp; Grammar \u2014 Aligned to UAE Ministry of Education Curricula</p>' +
+          '<div class="portal-chips">' +
+            '<span class="pchip flag" aria-label="United Arab Emirates"><span class="flag-stripe" aria-hidden="true"></span>UAE</span>' +
+            '<span class="pchip">2026\u20132027 Academic Year \u00b7 Grammar Academy</span>' +
+          '</div>' +
+        '</div>' +
+        ret +
+        '<p class="portal-instruct">Select your academy path to begin</p>' +
+        '<div class="role-grid">' + entranceCard("teacher") + entranceCard("student") + '</div>' +
+        '<footer class="portal-foot">' +
+          '<div class="pf-line">\u00a9 2026 Mourad Mekki</div>' +
+          '<div class="pf-sub">Grammar Academy \u00b7 Free educational support for UAE learners</div>' +
+          '<a class="portal-report" href="https://wa.me/971566018406" target="_blank" rel="noopener noreferrer">Report an issue</a>' +
+        '</footer>' +
+      '</div>' + modal +
+    '</div>';
+  };
+
+  /* ---- First-visit welcome modal (elegant, shown once; respects remembered users) ---- */
+  var ENTRY_WELCOME_KEY = "mm_grammar_entry_welcomed";
+  GA._welcomeDismissed = false;
+  GA._welcomeRole = null;
+  GA._entryWelcomed = function () { try { return localStorage.getItem(ENTRY_WELCOME_KEY) === "1"; } catch (_) { return false; } };
+  function markEntryWelcomed() { try { localStorage.setItem(ENTRY_WELCOME_KEY, "1"); } catch (_) {} GA._welcomeDismissed = true; }
+  function welcomeModalHtml() {
+    return '<div class="welcome-veil" id="gaWelcome" role="dialog" aria-modal="true" aria-labelledby="gwTitle">' +
+      '<div class="welcome-card">' +
+        '<button class="welcome-x" type="button" aria-label="Close welcome" onclick="GA._welcomeClose()">\u2715</button>' +
+        '<div class="welcome-crest" aria-hidden="true">' + ICON_STUDENT + '</div>' +
+        '<h2 id="gwTitle">Welcome to Grammar Academy</h2>' +
+        '<p class="welcome-lead">Tell us your role so we can open the right academy path.</p>' +
+        '<div class="welcome-roles">' +
+          '<button class="welcome-role" type="button" data-role="student" onclick="GA._welcomePick(this,\'student\')">' +
+            '<span class="wr-ic" aria-hidden="true">' + ICON_STUDENT + '</span>' +
+            '<span class="wr-main">Student</span><span class="wr-sub">I\u2019m here to learn and practise</span></button>' +
+          '<button class="welcome-role" type="button" data-role="teacher" onclick="GA._welcomePick(this,\'teacher\')">' +
+            '<span class="wr-ic" aria-hidden="true">' + ICON_TEACHER + '</span>' +
+            '<span class="wr-main">Teacher</span><span class="wr-sub">I\u2019m here to manage learning and progress</span></button>' +
+        '</div>' +
+        '<p class="welcome-privacy"><span aria-hidden="true">\uD83D\uDD12</span> Student numbers and teacher-controlled rosters keep learning progress organised without exposing unnecessary personal data.</p>' +
+        '<button class="btn gold welcome-go" id="gwContinue" type="button" disabled aria-disabled="true" onclick="GA._welcomeContinue()">Continue \u2192</button>' +
+      '</div></div>';
+  }
+  GA._welcomePick = function (btn, role) {
+    GA._welcomeRole = role;
+    var wrap = btn.parentNode;
+    if (wrap) Array.prototype.forEach.call(wrap.querySelectorAll(".welcome-role"), function (b) { b.classList.toggle("sel", b === btn); });
+    var go = el("gwContinue"); if (go) { go.disabled = false; go.setAttribute("aria-disabled", "false"); }
+  };
+  GA._welcomeContinue = function () {
+    markEntryWelcomed();
+    var r = GA._welcomeRole, veil = el("gaWelcome");
+    if (veil) veil.classList.add("closing");
+    setTimeout(function () {
+      if (r === "teacher") GA.showTeacherAccess();
+      else if (r === "student") GA.showStudentAccess();
+      else render();
+    }, 180);
+  };
+  GA._welcomeClose = function () {
+    markEntryWelcomed();
+    var veil = el("gaWelcome");
+    if (veil) { veil.classList.add("closing"); setTimeout(function () { var v = el("gaWelcome"); if (v && v.parentNode) v.parentNode.removeChild(v); }, 180); }
   };
 
   /* ---------- views: access screens ----------------------------------- */
